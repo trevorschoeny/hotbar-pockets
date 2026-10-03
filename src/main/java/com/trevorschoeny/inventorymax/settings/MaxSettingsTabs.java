@@ -137,13 +137,9 @@ public final class MaxSettingsTabs {
 
     private static final class Body {
         private static final BooleanSupplier DISABLED = () -> true;
-        /**
-         * A divider's colour on the inventory look; the options look draws
-         * vanilla's separator. Text is never hand-coloured: each label names its
-         * role and the menu's kind of screen colours it (MenuKit 6.1.0), so these
-         * tabs read on either look Inventory Plus's menu is made as.
-         */
-        private static final int LINE_COLOR = 0xFF8B8B8B;
+        // No colour is hand-set, text or line: each label names its role and the
+        // menu's kind of screen colours it, and a divider takes the kind's line
+        // (vanilla's separator on the options look). MenuKit 6.1.0.
 
         private final List<PanelElement> out = new ArrayList<>();
         private int y = 0;
@@ -166,7 +162,7 @@ public final class MaxSettingsTabs {
             y += 14;
             out.add(TextLabel.builder().at(0, y).text(Component.literal(description)).build());
             y += 16;
-            out.add(Divider.horizontal().at(0, y).color(LINE_COLOR).build());
+            out.add(Divider.horizontal().at(0, y).build());
             y += 6;
             // Under the line: Reset furthest left, then the switch.
             out.add(Flow.builder().at(0, y).gap(10, 4)
@@ -206,7 +202,7 @@ public final class MaxSettingsTabs {
             y += 8;
             out.add(settingText(0, y, Component.literal(text), TextRole.HEADING));
             y += 12;
-            out.add(Divider.horizontal().at(0, y - 2).size(160, 1).color(LINE_COLOR).build());
+            out.add(Divider.horizontal().at(0, y - 2).size(160, 1).build());
             y += 2;
             return this;
         }
