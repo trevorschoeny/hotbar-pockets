@@ -13,6 +13,7 @@ import com.trevlar.menukit.api.element.Flow;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.Tabs;
 import com.trevlar.menukit.api.element.TextLabel;
+import com.trevlar.menukit.api.element.TextRole;
 import com.trevlar.menukit.api.element.Toggle;
 
 import com.trevorschoeny.keybindery.api.KeybinderyAPI;
@@ -136,7 +137,13 @@ public final class MaxSettingsTabs {
 
     private static final class Body {
         private static final BooleanSupplier DISABLED = () -> true;
-        private static final int TEXT = 0xFF555555;
+        /**
+         * A divider's colour on the inventory look; the options look draws
+         * vanilla's separator. Text is never hand-coloured: each label names its
+         * role and the menu's kind of screen colours it (MenuKit 6.1.0), so these
+         * tabs read on either look Inventory Plus's menu is made as.
+         */
+        private static final int LINE_COLOR = 0xFF8B8B8B;
 
         private final List<PanelElement> out = new ArrayList<>();
         private int y = 0;
@@ -155,11 +162,11 @@ public final class MaxSettingsTabs {
             // The tab's title, bold, as on Inventory Plus's tabs. The mod's name
             // is Inventory Plus's bar across the whole menu panel, not here.
             out.add(TextLabel.builder().at(0, y).text(Component.literal(title).withStyle(ChatFormatting.BOLD))
-                    .color(TextLabel.COLOR_DARK).build());
+                    .role(TextRole.HEADING).build());
             y += 14;
-            out.add(TextLabel.builder().at(0, y).text(Component.literal(description)).color(TEXT).build());
+            out.add(TextLabel.builder().at(0, y).text(Component.literal(description)).build());
             y += 16;
-            out.add(Divider.horizontal().at(0, y).color(0xFF8B8B8B).build());
+            out.add(Divider.horizontal().at(0, y).color(LINE_COLOR).build());
             y += 6;
             // Under the line: Reset furthest left, then the switch.
             out.add(Flow.builder().at(0, y).gap(10, 4)
@@ -183,9 +190,9 @@ public final class MaxSettingsTabs {
         }
 
         /** Settings text, turning grey while the feature is off. */
-        private TextLabel settingText(int x, int y, Component text, int color) {
+        private TextLabel settingText(int x, int y, Component text, TextRole role) {
             BooleanSupplier on = featureOn;
-            return TextLabel.builder().at(x, y).text(text).color(color)
+            return TextLabel.builder().at(x, y).text(text).role(role)
                     .disabledWhen(() -> !on.getAsBoolean()).build();
         }
 
@@ -197,16 +204,16 @@ public final class MaxSettingsTabs {
         /** A category: its title and a short line under it; greys while the feature is off. */
         Body heading(String text) {
             y += 8;
-            out.add(settingText(0, y, Component.literal(text), TextLabel.COLOR_DARK));
+            out.add(settingText(0, y, Component.literal(text), TextRole.HEADING));
             y += 12;
-            out.add(Divider.horizontal().at(0, y - 2).size(160, 1).color(0xFF8B8B8B).build());
+            out.add(Divider.horizontal().at(0, y - 2).size(160, 1).color(LINE_COLOR).build());
             y += 2;
             return this;
         }
 
         /** A setting's text, on its own line. */
         private void label(Component text) {
-            out.add(settingText(0, y, text, TEXT));
+            out.add(settingText(0, y, text, TextRole.BODY));
             y += 12;
         }
 
