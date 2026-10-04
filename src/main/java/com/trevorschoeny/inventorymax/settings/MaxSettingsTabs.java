@@ -85,10 +85,11 @@ public final class MaxSettingsTabs {
                         + "and keys to cycle through them.",
                         IMConfig::pocketCyclerEnabled, IMConfig::setPocketCyclerEnabled,
                         () -> {
-                            IMConfig.reset("pocketCyclerEnabled", "pocketHudMode");
+                            IMConfig.reset("pocketCyclerEnabled", "pocketsShowButton", "pocketHudMode");
                             resetKeys(IMKeybinds.CYCLE_FORWARD, IMKeybinds.CYCLE_BACKWARD);
                         })
-                .placeholderCheckbox("Show the Pockets button")
+                .checkbox("Show the Pockets button",
+                        IMConfig::pocketsShowButton, IMConfig::setPocketsShowButton, () -> false)
                 .choice("Beside the hotbar", Arrays.asList(PocketHudMode.values()),
                         m -> m == PocketHudMode.NONE ? "Off" : "Mini hotbar",
                         IMConfig::pocketHudMode, IMConfig::setPocketHudMode, () -> false)
@@ -102,8 +103,13 @@ public final class MaxSettingsTabs {
         return new Body()
                 .frame("Equipment Slots", "Adds an elytra slot and a totem slot to your inventory.",
                         IMConfig::equipmentSlotsEnabled, IMConfig::setEquipmentSlotsEnabled,
-                        () -> IMConfig.reset("equipmentSlotsEnabled", "equipmentHudCue"))
-                .placeholderCheckbox("Show the Equipment Slots button")
+                        () -> IMConfig.reset("equipmentSlotsEnabled", "equipmentSlotsShowButton",
+                                "elytraSlotEnabled", "totemSlotEnabled", "equipmentHudCue"))
+                .checkbox("Show the Equipment Slots button",
+                        IMConfig::equipmentSlotsShowButton, IMConfig::setEquipmentSlotsShowButton, () -> false)
+                // Each slot on its own (Trev, 2026-10-04).
+                .checkbox("Elytra slot", IMConfig::elytraSlotEnabled, IMConfig::setElytraSlotEnabled, () -> false)
+                .checkbox("Totem slot", IMConfig::totemSlotEnabled, IMConfig::setTotemSlotEnabled, () -> false)
                 .checkbox("Show elytra and totem icons beside the hotbar",
                         IMConfig::equipmentHudCue, IMConfig::setEquipmentHudCue, () -> false)
                 .build();
@@ -114,8 +120,9 @@ public final class MaxSettingsTabs {
                 .frame("Mend Anywhere", "Mending items repair from XP anywhere in your inventory, "
                         + "not only in your hands and armor.",
                         IMConfig::mendInventoryItems, IMConfig::setMendInventoryItems,
-                        () -> IMConfig.reset("mendInventoryItems"))
-                .placeholderCheckbox("Show the Mend Anywhere button")
+                        () -> IMConfig.reset("mendInventoryItems", "mendAnywhereShowButton"))
+                .checkbox("Show the Mend Anywhere button",
+                        IMConfig::mendAnywhereShowButton, IMConfig::setMendAnywhereShowButton, () -> false)
                 .build();
     }
 
@@ -133,7 +140,6 @@ public final class MaxSettingsTabs {
     // mod adds tabs, the row vocabulary belongs in MenuKit instead.
 
     private static final class Body {
-        private static final BooleanSupplier DISABLED = () -> true;
         /**
          * A divider's colour on the inventory look; the options look draws
          * vanilla's separator. Text is never hand-coloured: each label names its
@@ -220,11 +226,6 @@ public final class MaxSettingsTabs {
             out.add(ChordButton.builder(key).at(0, y).disabledWhen(gated(() -> false)).build());
             y += 20;
             return this;
-        }
-
-        /** A checkbox with no setting behind it yet: shown checked, greyed. */
-        Body placeholderCheckbox(String label) {
-            return checkbox(label, () -> true, v -> {}, DISABLED);
         }
 
         /** A setting with a few named values, bound to its config and greyed while {@code unavailable}. */

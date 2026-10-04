@@ -68,7 +68,7 @@ public final class EquipAutoRestock {
 
         if (!justConsumed) return;                // only the full→empty transition
         if (mc.gui.screen() != null) return;            // gameplay only — not while editing the inventory
-        if (!IMConfig.equipmentSlotsEnabled()) return; // feature off → no totem restock
+        if (!IMConfig.totemSlotOn()) return;            // totem slot off → no totem restock
         if (!InventoryPlusApi.isItemRestockEnabled()) return;  // follow the auto-restock toggle
 
         Inventory inv = player.getInventory();

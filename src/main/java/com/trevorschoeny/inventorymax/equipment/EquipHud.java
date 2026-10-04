@@ -58,7 +58,7 @@ public final class EquipHud {
     /** Elytra to show: the equip slot first, else a worn chest-slot elytra, else none. */
     private static ItemStack elytraCue() {
         Player p = Minecraft.getInstance().player;
-        if (p == null) return ItemStack.EMPTY;
+        if (p == null || !IMConfig.elytraSlotOn()) return ItemStack.EMPTY;
         ItemStack equip = EquipmentSlots.getElytra(p);
         if (!equip.isEmpty()) return equip;
         ItemStack chest = p.getItemBySlot(EquipmentSlot.CHEST);
@@ -68,6 +68,6 @@ public final class EquipHud {
     /** Totem to show: the equip totem slot, else none. */
     private static ItemStack totemCue() {
         Player p = Minecraft.getInstance().player;
-        return p == null ? ItemStack.EMPTY : EquipmentSlots.getTotem(p);
+        return p == null || !IMConfig.totemSlotOn() ? ItemStack.EMPTY : EquipmentSlots.getTotem(p);
     }
 }

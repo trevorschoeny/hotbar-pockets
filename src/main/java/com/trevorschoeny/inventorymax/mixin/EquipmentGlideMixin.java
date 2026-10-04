@@ -57,7 +57,7 @@ public abstract class EquipmentGlideMixin {
     @Inject(method = "canGlide", at = @At("RETURN"), cancellable = true)
     private void inventoryMax$equipCanGlide(CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) return; // vanilla already allows it (worn glider — chest wins)
-        if (!IMConfig.equipmentSlotsEnabled()) return; // feature off → no slot-granted glide
+        if (!IMConfig.elytraSlotOn()) return; // elytra slot off → no slot-granted glide
         LivingEntity self = (LivingEntity) (Object) this;
         // Replicate vanilla's airborne guard: never glide on the ground, as a
         // passenger, or under levitation — even with an equipment elytra.

@@ -70,7 +70,7 @@ public abstract class InventoryMenuQuickMoveMixin {
         }
 
         // ── An elytra anywhere else → dedicated elytra slot; NEVER the chestplate ──
-        if (EquipmentSlots.isElytra(live)) {
+        if (EquipmentSlots.isElytra(live) && IMConfig.elytraSlotOn()) {
             if (!menu.slots.get(elytraIdx).hasItem()) {
                 cir.setReturnValue(inventoryMax$moveAndFinish(
                         player, from, live, elytraIdx, elytraIdx + 1, false));
@@ -85,7 +85,7 @@ public abstract class InventoryMenuQuickMoveMixin {
         }
 
         // ── A totem from a non-equipment slot → dedicated totem slot if empty ──
-        if (EquipmentSlots.isTotem(live) && !menu.slots.get(totemIdx).hasItem()) {
+        if (EquipmentSlots.isTotem(live) && IMConfig.totemSlotOn() && !menu.slots.get(totemIdx).hasItem()) {
             cir.setReturnValue(inventoryMax$moveAndFinish(
                     player, from, live, totemIdx, totemIdx + 1, false));
             return;

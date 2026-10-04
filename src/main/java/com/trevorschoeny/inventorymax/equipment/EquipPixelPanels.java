@@ -96,7 +96,8 @@ public final class EquipPixelPanels {
      * when no container screen is up or the anchor slots aren't on it.
      */
     private static ScreenOrigin anchor(int slotsAboveOffhand, int pairIndex) {
-        if (!IMConfig.equipmentSlotsEnabled()) return null; // feature off → no presentation
+        // pairIndex 0 is the elytra slot, 1 the totem; each hides on its own switch.
+        if (!(pairIndex == 0 ? IMConfig.elytraSlotOn() : IMConfig.totemSlotOn())) return null;
         if (!(Minecraft.getInstance().gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             return null;
         }

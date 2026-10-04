@@ -58,6 +58,15 @@ public final class IMConfig {
     // The elytra/totem HUD cue icons beside the hotbar (sub of Equipment
     // Slots). Default ON — matches shipped behavior.
     private static boolean equipmentHudCue = true;
+    // Each slot on its own under the master (Trev, 2026-10-04). Off hides that
+    // slot and disarms its behaviors only: elytra = glide + elytra routing,
+    // totem = totem-fires-last + totem restock + totem routing.
+    private static boolean elytraSlotEnabled = true;
+    private static boolean totemSlotEnabled = true;
+    // The on/off switches in Inventory Plus's inventory column (Trev, 2026-10-04).
+    private static boolean pocketsShowButton = true;
+    private static boolean equipmentSlotsShowButton = true;
+    private static boolean mendAnywhereShowButton = true;
     // Container locks: the old master toggle is gone (Reach build stage 4).
     // Whether a player's container locks are also kept on the server is that
     // player's choice, Inventory Plus's "Also keep container locks on the
@@ -110,6 +119,11 @@ public final class IMConfig {
         pocketHudMode = PocketHudMode.fromName(readString(root, "pocketHudMode", null), pocketHudMode);
         equipmentSlotsEnabled = readBool(root, "equipmentSlotsEnabled", equipmentSlotsEnabled);
         equipmentHudCue = readBool(root, "equipmentHudCue", equipmentHudCue);
+        elytraSlotEnabled = readBool(root, "elytraSlotEnabled", elytraSlotEnabled);
+        totemSlotEnabled = readBool(root, "totemSlotEnabled", totemSlotEnabled);
+        pocketsShowButton = readBool(root, "pocketsShowButton", pocketsShowButton);
+        equipmentSlotsShowButton = readBool(root, "equipmentSlotsShowButton", equipmentSlotsShowButton);
+        mendAnywhereShowButton = readBool(root, "mendAnywhereShowButton", mendAnywhereShowButton);
         mendInventoryItems = readBool(root, "mendInventoryItems", mendInventoryItems);
     }
 
@@ -147,6 +161,11 @@ public final class IMConfig {
         root.addProperty("pocketHudMode", pocketHudMode.name());
         root.addProperty("equipmentSlotsEnabled", equipmentSlotsEnabled);
         root.addProperty("equipmentHudCue", equipmentHudCue);
+        root.addProperty("elytraSlotEnabled", elytraSlotEnabled);
+        root.addProperty("totemSlotEnabled", totemSlotEnabled);
+        root.addProperty("pocketsShowButton", pocketsShowButton);
+        root.addProperty("equipmentSlotsShowButton", equipmentSlotsShowButton);
+        root.addProperty("mendAnywhereShowButton", mendAnywhereShowButton);
         root.addProperty("mendInventoryItems", mendInventoryItems);
         return root;
     }
@@ -190,6 +209,23 @@ public final class IMConfig {
 
     public static boolean equipmentHudCue() { return equipmentHudCue; }
     public static void setEquipmentHudCue(boolean v) { equipmentHudCue = v; save(); }
+
+    public static boolean elytraSlotEnabled() { return elytraSlotEnabled; }
+    public static void setElytraSlotEnabled(boolean v) { elytraSlotEnabled = v; save(); }
+    public static boolean totemSlotEnabled() { return totemSlotEnabled; }
+    public static void setTotemSlotEnabled(boolean v) { totemSlotEnabled = v; save(); }
+
+    /** The elytra slot is live: Equipment Slots on and the elytra slot on. */
+    public static boolean elytraSlotOn() { return equipmentSlotsEnabled && elytraSlotEnabled; }
+    /** The totem slot is live: Equipment Slots on and the totem slot on. */
+    public static boolean totemSlotOn() { return equipmentSlotsEnabled && totemSlotEnabled; }
+
+    public static boolean pocketsShowButton() { return pocketsShowButton; }
+    public static void setPocketsShowButton(boolean v) { pocketsShowButton = v; save(); }
+    public static boolean equipmentSlotsShowButton() { return equipmentSlotsShowButton; }
+    public static void setEquipmentSlotsShowButton(boolean v) { equipmentSlotsShowButton = v; save(); }
+    public static boolean mendAnywhereShowButton() { return mendAnywhereShowButton; }
+    public static void setMendAnywhereShowButton(boolean v) { mendAnywhereShowButton = v; save(); }
 
 
     public static boolean mendInventoryItems() { return mendInventoryItems; }

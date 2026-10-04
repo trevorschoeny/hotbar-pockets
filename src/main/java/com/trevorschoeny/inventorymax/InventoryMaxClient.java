@@ -47,6 +47,7 @@ public class InventoryMaxClient implements ClientModInitializer {
         // Pockets, Equipment Slots and Mend Anywhere tabs in Inventory Plus's
         // settings menu, replacing its stand-ins.
         MaxSettingsTabs.register();
+        registerFeatureSwitches();
         // A player who had "pockets supply automation" off keeps that: the
         // Pockets box comes off Restock's and Auto Tool Switch's reach, once.
         // After every client init, so Inventory Plus has read its reach first.
@@ -101,5 +102,23 @@ public class InventoryMaxClient implements ClientModInitializer {
             InventoryPlusApi.denyInReach(InventoryPlusOperations.AUTO_TOOL_SWITCH, pockets);
         }
         IMConfig.forgetLegacy();
+    }
+
+    /**
+     * The three features' on/off switches in Inventory Plus's inventory column
+     * (Trev, 2026-10-04), after Inventory Plus's own, in tab order.
+     */
+    private static void registerFeatureSwitches() {
+        InventoryPlusApi.addFeatureSwitch("inventorymax:pockets", "Pockets",
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("inventorymax", "pockets_button"),
+                IMConfig::pocketCyclerEnabled, IMConfig::setPocketCyclerEnabled, IMConfig::pocketsShowButton,
+                "Hover over a hotbar slot to show its pockets");
+        InventoryPlusApi.addFeatureSwitch("inventorymax:equipment_slots", "Equipment Slots",
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("inventorymax", "equipment_slots_button"),
+                IMConfig::equipmentSlotsEnabled, IMConfig::setEquipmentSlotsEnabled,
+                IMConfig::equipmentSlotsShowButton, null);
+        InventoryPlusApi.addFeatureSwitch("inventorymax:mend_anywhere", "Mend Anywhere",
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("inventorymax", "mend_anywhere_button"),
+                IMConfig::mendInventoryItems, IMConfig::setMendInventoryItems, IMConfig::mendAnywhereShowButton, null);
     }
 }
