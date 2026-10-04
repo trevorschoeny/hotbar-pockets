@@ -83,6 +83,9 @@ public final class PocketPixelPanels {
                 // RAISED draws the padded backing box behind the slots — the
                 // old consumer-drawn pocket panel, now a panel property.
                 .style(PanelStyle.RAISED)
+                // Above every ordinary panel, Inventory Plus's buttons included
+                // (Trev, 2026-10-04), and it takes the clicks there (MenuKit 956188a).
+                .popover()
                 .position(PanelPosition.pixel(() -> rowOrigin(hotbar)))
                 .build();
         // Default opacity (opaque): clicks in the backing margin are eaten, so
@@ -121,6 +124,8 @@ public final class PocketPixelPanels {
                         new ResizeButton(true, PocketGeometry.BUTTON_SIZE + 1)))
                 .visible(true)
                 .style(PanelStyle.NONE)
+                // On the pocket row's layer, so the +/- never hide under a button.
+                .popover()
                 .position(PanelPosition.pixel(PocketPixelPanels::buttonsOrigin))
                 .build()
                 // The two boxes float in empty space below the hotbar; the 1px
