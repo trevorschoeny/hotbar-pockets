@@ -88,7 +88,6 @@ public final class MaxSettingsTabs {
                             IMConfig.reset("pocketCyclerEnabled", "pocketHudMode");
                             resetKeys(IMKeybinds.CYCLE_FORWARD, IMKeybinds.CYCLE_BACKWARD);
                         })
-                .heading("Misc.")
                 .placeholderCheckbox("Show the Pockets button")
                 .choice("Beside the hotbar", Arrays.asList(PocketHudMode.values()),
                         m -> m == PocketHudMode.NONE ? "Off" : "Mini hotbar",
@@ -104,7 +103,6 @@ public final class MaxSettingsTabs {
                 .frame("Equipment Slots", "Adds an elytra slot and a totem slot to your inventory.",
                         IMConfig::equipmentSlotsEnabled, IMConfig::setEquipmentSlotsEnabled,
                         () -> IMConfig.reset("equipmentSlotsEnabled", "equipmentHudCue"))
-                .heading("Misc.")
                 .placeholderCheckbox("Show the Equipment Slots button")
                 .checkbox("Show elytra and totem icons beside the hotbar",
                         IMConfig::equipmentHudCue, IMConfig::setEquipmentHudCue, () -> false)
@@ -117,7 +115,6 @@ public final class MaxSettingsTabs {
                         + "not only in your hands and armor.",
                         IMConfig::mendInventoryItems, IMConfig::setMendInventoryItems,
                         () -> IMConfig.reset("mendInventoryItems"))
-                .heading("Misc.")
                 .placeholderCheckbox("Show the Mend Anywhere button")
                 .build();
     }
@@ -153,9 +150,9 @@ public final class MaxSettingsTabs {
 
         /**
          * The frame, as Inventory Plus's tabs have it (Trev, 2026-09-30): the
-         * mod's name centred, the title, the description, the line, then Reset
+         * mod's name centred, the title, the description, then Reset
          * to Defaults (asking first through Inventory Plus's menu, then
-         * running {@code reset}) with the On/Off switch after it, at the left.
+         * running {@code reset}) with the On/Off switch after it, at the left, then the line.
          */
         Body frame(String title, String description, BooleanSupplier on, Consumer<Boolean> setOn,
                    Runnable reset) {
@@ -166,9 +163,8 @@ public final class MaxSettingsTabs {
             y += 14;
             out.add(TextLabel.builder().at(0, y).text(Component.literal(description)).build());
             y += 16;
-            out.add(Divider.horizontal().at(0, y).color(LINE_COLOR).build());
-            y += 6;
-            // Under the line: Reset furthest left, then the switch.
+            // Under the description, above the line (Trev, 2026-10-03): Reset
+            // furthest left, then the switch.
             out.add(Flow.builder().at(0, y).gap(10, 4)
                     .add(Button.builder().label(Component.literal("Reset to Defaults")).size(0, 16)
                             .onClick(() -> InventoryPlusApi.confirmInSettings("Reset " + title + " to defaults?",
@@ -178,7 +174,9 @@ public final class MaxSettingsTabs {
                     .add(Toggle.builder().size(40, 16).state(on, setOn)
                             .label(() -> Component.literal(on.getAsBoolean() ? "On" : "Off")).build())
                     .build());
-            y += 22;
+            y += 20;
+            out.add(Divider.horizontal().at(0, y).color(LINE_COLOR).build());
+            y += 6;
             featureOn = on;
             return this;
         }
@@ -203,7 +201,7 @@ public final class MaxSettingsTabs {
 
         /** A category: its title and a short line under it; greys while the feature is off. */
         Body heading(String text) {
-            y += 8;
+            if (y > 0) y += 8;
             out.add(settingText(0, y, Component.literal(text), TextRole.HEADING));
             y += 12;
             out.add(Divider.horizontal().at(0, y - 2).size(160, 1).color(LINE_COLOR).build());
