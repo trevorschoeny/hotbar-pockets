@@ -29,7 +29,7 @@
     "minecraft": "~26.2",
     "menukit": ">=6.1.0 <7.0.0",
     "menukit-containers": ">=6.1.0 <7.0.0",
-    "inventoryplus": ">=1.8.0",
+    "inventoryplus": ">=1.9.0",
     "keybindery": ">=1.1.0"
   }
 }
