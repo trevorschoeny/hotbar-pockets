@@ -23,7 +23,7 @@ Every feature has its own tab in Inventory Plus's settings menu, with its switch
 
 ## Compatibility
 
-Minecraft 26.2 with Fabric. Install it on both client and server. The pockets, the Elytra slot and the Totem slot are named slot groups, so other mods that list slot groups show them by name, with all the pockets as one entry called Pockets.
+Minecraft 26.3 with Fabric. Install it on both client and server. The pockets, the Elytra slot and the Totem slot are named slot groups, so other mods that list slot groups show them by name, with all the pockets as one entry called Pockets.
 
 ## License
 
