@@ -95,7 +95,7 @@ public final class IMConfig {
         loaded = true;
         Path path = filePath();
         if (!Files.exists(path)) {
-            InventoryMax.LOGGER.info("[config] no config at {} — using defaults", path);
+            InventoryMax.LOGGER.info("[config] no config at {}, using defaults", path);
             return;
         }
         try {
@@ -107,7 +107,7 @@ public final class IMConfig {
             }
             InventoryMax.LOGGER.info("[config] loaded from {}", path);
         } catch (IOException | JsonSyntaxException | IllegalStateException e) {
-            InventoryMax.LOGGER.error("[config] failed to read {} — using defaults", path, e);
+            InventoryMax.LOGGER.error("[config] failed to read {}, using defaults", path, e);
         }
     }
 
@@ -175,7 +175,7 @@ public final class IMConfig {
             settingsJson().entrySet().forEach(e -> root.add(e.getKey(), e.getValue()));
             Files.writeString(path, GSON.toJson(root));
         } catch (IOException e) {
-            InventoryMax.LOGGER.error("[config] failed to write {} — changes won't persist", path, e);
+            InventoryMax.LOGGER.error("[config] failed to write {}, changes won't persist", path, e);
         }
     }
 

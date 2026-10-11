@@ -79,7 +79,7 @@ public class InventoryMaxClient implements ClientModInitializer {
         // placed containers. Client-only: IP's LockedSlots is a client-only class.
         InventoryPlusApi.registerSlotLockProvider(new ContainerLockProvider());
 
-        InventoryMax.LOGGER.info("[inventorymax] Client init — Pocket Cycler + Container Locks active.");
+        InventoryMax.LOGGER.info("[inventorymax] Client init, Pocket Cycler + Container Locks active.");
     }
 
     // "Pockets supply automation" used to be a switch of its own; it is now

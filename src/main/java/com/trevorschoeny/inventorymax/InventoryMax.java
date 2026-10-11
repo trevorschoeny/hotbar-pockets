@@ -120,6 +120,6 @@ public class InventoryMax implements ModInitializer {
         // the slot level.
         MendingCandidates.register(InventoryMendingProvider.INSTANCE);
 
-        LOGGER.info("[inventorymax] Common init — pocket + equipment storage + networking + mending registered.");
+        LOGGER.info("[inventorymax] Common init, pocket + equipment storage + networking + mending registered.");
     }
 }

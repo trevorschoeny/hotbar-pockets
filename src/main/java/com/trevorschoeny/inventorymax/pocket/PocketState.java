@@ -89,7 +89,7 @@ public final class PocketState {
             }
             InventoryMax.LOGGER.info("[pockets] loaded counts for {} world(s)", worlds);
         } catch (IOException | JsonSyntaxException | IllegalStateException ex) {
-            InventoryMax.LOGGER.error("[pockets] failed to read {} — starting empty", path, ex);
+            InventoryMax.LOGGER.error("[pockets] failed to read {}, starting empty", path, ex);
         }
     }
 
@@ -159,7 +159,7 @@ public final class PocketState {
             root.add("perWorld", perWorld);
             Files.writeString(path, GSON.toJson(root));
         } catch (IOException ex) {
-            InventoryMax.LOGGER.error("[pockets] failed to write {} — counts won't persist", path, ex);
+            InventoryMax.LOGGER.error("[pockets] failed to write {}, counts won't persist", path, ex);
         }
     }
 }
