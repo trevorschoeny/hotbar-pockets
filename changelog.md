@@ -1,9 +1,7 @@
-Requires Inventory Plus 1.8.0 or newer, Keybindery 1.1.0 or newer, and MenuKit and MenuKit: Containers 6.0.0 or newer, below 7.0.0.
+Requires Inventory Plus 1.9.0 or newer, Keybindery 1.1.0 or newer, and MenuKit and MenuKit: Containers 6.1.0 or newer, below 7.0.0.
 
-Container locks are no longer shared by default. Sharing used to be Inventory Max's own setting and started on. It is now Inventory Plus's "Also keep container locks on the server", on its Lock groups tab, and it starts off. Turn it on to share the container locks you place from then on. Locks the server already keeps stay in place.
+Pockets, Equipment Slots and Mend Anywhere each have an on and off switch in Inventory Plus's column beside your inventory. Left click turns the feature on or off, and Ctrl-click (Cmd on a Mac) opens its tab. Each tab can hide its switch.
 
-The server decides every shared container lock, and a lock stops the same moves a locked slot in your inventory does: shift-clicking in and out, double-click collecting, dragging, dropping, and number-key and offhand swaps.
+The elytra slot and the totem slot can now be turned off separately, on the Equipment Slots tab. Turning one off hides that slot and stops what it does, and leaves the other as it is.
 
-Inventory Max's settings are now tabs in Inventory Plus's settings menu: Pockets, Equipment Slots and Mend Anywhere. Inventory Max's config button in Mod Menu opens them.
-
-In Reach, Pocket Cycler lists only the slots you carry and your pockets.
+A hotbar slot's pocket row and its plus and minus buttons now draw above Inventory Plus's buttons, and clicks there reach the pockets.
