@@ -57,8 +57,8 @@ dependencies {
 
     // ModMenu shows IM's config screen from the mods list. Soft dependency.
     // This is a beta, the only 26.2 build available.
-    compileOnly "com.terraformersmc:modmenu:20.0.1"
-    localRuntime "com.terraformersmc:modmenu:20.0.1"
+    compileOnly "com.terraformersmc:modmenu:21.0.0"
+    localRuntime "com.terraformersmc:modmenu:21.0.0"
 
     // MenuKit: Containers is the slot-graft kit (MenuKitGraft, KeyedStorages,
     // StorageAttachment, MKSlotState, MenuKitGraftRender, MenuKitSlot). MenuKit
