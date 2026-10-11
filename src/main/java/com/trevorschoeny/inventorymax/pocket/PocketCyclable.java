@@ -18,51 +18,51 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Adapts Pocket Cycler's "rotate the ring" mechanic to the
- * {@link HotbarCyclable} contract — the pocket sibling of Column Cycler's
- * {@code ColumnCyclerCyclable}. Auto Tool Switch and Auto-Restock consume this
- * through {@code HotbarCyclableRegistry} without knowing pockets specifically;
- * they just see more Tier-2 candidates.
+ * Fits the pockets' ring rotation to the {@link HotbarCyclable} contract, the
+ * pocket counterpart of Column Cycler's {@code ColumnCyclerCyclable}. Auto Tool
+ * Switch and Restock use this through {@code HotbarCyclableRegistry} without
+ * knowing about pockets; to them pockets are just more candidates.
  *
  * <h3>Why pockets are "extra" slots</h3>
  *
- * Column Cycler's cycle slots live in the player's real inventory (container
- * slots 9-35), so they fit {@link #hotbarPositionOf}'s 0-35 contract directly.
- * Pockets do not — their content lives in a separate attachment
- * ({@link Pockets#POCKETS}), outside the 0-35 model entirely. So we surface
- * them through {@link #extraSearchSlots(Player)} with an <b>encoded id</b>
- * (see {@link #POCKET_ID_BASE}) the registry routes back to us, and read their
- * live content straight from the synced attachment — the same path the cycle
- * HUD uses, which works in-world where the pocket <i>slots</i> are inert.
+ * Column Cycler's cycle slots are in the player's real inventory (container
+ * slots 9 to 35), so they fit {@link #hotbarPositionOf}'s 0 to 35 contract
+ * directly. Pockets don't: their contents live in a separate attachment
+ * ({@link Pockets#POCKETS}), outside slots 0 to 35 entirely. So they are
+ * offered through {@link #extraSearchSlots(Player)} with an <b>encoded id</b>
+ * (see {@link #POCKET_ID_BASE}) that the registry routes back here, and their
+ * live contents are read straight from the synced attachment. That is the same
+ * path the cycle HUD uses, and it works in the world, where the pocket
+ * <i>slots</i> are inert.
  *
- * <h3>Bring-to-hotbar is server-authoritative</h3>
+ * <h3>The server brings items to the hotbar</h3>
  *
- * Unlike Column Cycler (whose rotation applies locally at once), pocket
- * rotation is a {@link PocketRotateC2S} round-trip — the rotated contents
+ * Unlike Column Cycler, whose rotation applies locally at once, a pocket
+ * rotation is a {@link PocketRotateC2S} round trip, so the rotated contents
  * arrive a tick or two later. {@link #bringToHotbar(int)} therefore marks the
- * destination hotbar slot via {@link AutoRestockSuppression} so the round-trip
- * arrival isn't mistaken for depletion (pocket tools aren't in Auto-Restock's
- * 0-35 snapshot, so a freshly-arrived one would otherwise read as a brand-new
- * stack — Column Cycler doesn't need this because its slots <i>are</i>
- * snapshotted and its rotation is immediate).
+ * destination hotbar slot via {@link AutoRestockSuppression} so the late
+ * arrival isn't mistaken for the item running out. Pocket tools aren't in
+ * Restock's snapshot of slots 0 to 35, so a newly arrived one would otherwise
+ * look like a brand-new stack. Column Cycler doesn't need this because its
+ * slots <i>are</i> in the snapshot and its rotation is immediate.
  */
 public final class PocketCyclable implements HotbarCyclable {
 
-    /** Singleton — registered once via {@code HotbarCyclableRegistry#register} at IM client init. */
+    /** Registered once via {@code HotbarCyclableRegistry#register} at IM client init. */
     public static final PocketCyclable INSTANCE = new PocketCyclable();
 
     private PocketCyclable() {}
 
     /**
-     * Base of the encoded extra-slot id space: {@code POCKET_ID_BASE +
-     * flatIndex(hotbar, depth)}, spanning {@code [100, 100 + TOTAL)}. 100 sits
-     * well clear of the 0-35 inventory model <i>and</i> Column Cycler's 9-35
-     * claims, satisfying {@link HotbarCyclable}'s disjoint-id contract so a
+     * Base of the encoded extra-slot ids: {@code POCKET_ID_BASE +
+     * flatIndex(hotbar, depth)}, covering {@code [100, 100 + TOTAL)}. 100 is
+     * well clear of inventory slots 0 to 35 <i>and</i> Column Cycler's 9 to 35,
+     * which meets {@link HotbarCyclable}'s rule that ids don't overlap, so a
      * returned id routes to exactly one cycler.
      */
     private static final int POCKET_ID_BASE = 100;
 
-    /** Encode a pocket's {@code (hotbar, depth)} into an extra-slot id. */
+    /** Encodes a pocket's {@code (hotbar, depth)} as an extra-slot id. */
     public static int encodeId(int hotbar, int depth) {
         return POCKET_ID_BASE + Pockets.flatIndex(hotbar, depth);
     }
@@ -72,12 +72,12 @@ public final class PocketCyclable implements HotbarCyclable {
         return id >= POCKET_ID_BASE && id < POCKET_ID_BASE + Pockets.TOTAL;
     }
 
-    /** Decode the hotbar column from a pocket id (undefined unless {@link #isPocketId}). */
+    /** The hotbar column of a pocket id (undefined unless {@link #isPocketId}). */
     public static int hotbarOf(int id) {
         return (id - POCKET_ID_BASE) / Pockets.MAX_PER_SLOT;
     }
 
-    /** Decode the depth (0 = closest to the hand) from a pocket id. */
+    /** The depth of a pocket id (0 is closest to the hand). */
     public static int depthOf(int id) {
         return (id - POCKET_ID_BASE) % Pockets.MAX_PER_SLOT;
     }
@@ -88,11 +88,11 @@ public final class PocketCyclable implements HotbarCyclable {
         if (!IMConfig.pocketCyclerEnabled()) return -1;
         int hotbar = hotbarOf(slot);
         int depth = depthOf(slot);
-        // Only revealed pockets are reachable — depth must be within the hotbar
-        // slot's current per-world pocket count. (Hidden pockets exist
-        // server-side but aren't part of any active cycle.)
+        // Only shown pockets are reachable: depth must be within the hotbar
+        // slot's current per-world pocket count. (Hidden pockets exist on the
+        // server but aren't part of any active cycle.)
         if (depth >= PocketState.count(hotbar)) return -1;
-        // A pocket's column IS the hotbar position the rotation brings it to.
+        // A pocket's column is the hotbar position the rotation brings it to.
         return hotbar;
     }
 
@@ -102,8 +102,8 @@ public final class PocketCyclable implements HotbarCyclable {
         // Whether Restock and Auto Tool Switch may take from pockets is their
         // reach (Inventory Plus's Reach tab): the caller filters these through
         // the cycler's allows, which Inventory Plus's veto answers.
-        // Read live content from the synced attachment — works in-world where
-        // the pocket slots are inert/hidden (same path the cycle HUD uses).
+        // Read live contents from the synced attachment. This works in the world,
+        // where the pocket slots are inert and hidden (the cycle HUD does the same).
         Storage pockets = Pockets.POCKETS.bind(player);
         List<ExtraSlot> out = new ArrayList<>();
         for (int hotbar = 0; hotbar < Pockets.HOTBAR_SLOTS; hotbar++) {
@@ -130,16 +130,16 @@ public final class PocketCyclable implements HotbarCyclable {
      */
     @Override
     public CyclerOperation bringToHotbar(int slot, BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
-        // Re-validate the claim — the caller may hold a stale id, or the pocket
-        // count may have changed between query and bring.
+        // Check the id again: the caller may hold a stale one, or the pocket
+        // count may have changed between the query and now.
         if (hotbarPositionOf(slot) == -1) return CyclerOperation.NO_OP;
         int hotbar = hotbarOf(slot);
         int depth = depthOf(slot);
         int count = PocketState.count(hotbar);
-        // Cheapest rotation to land depth `d` in the hand: FORWARD d+1 steps
-        // (each step brings pocket 0 → hand) or BACKWARD count-d steps (each
-        // brings the topmost pocket → hand). Pick the cheaper direction, same
-        // as ColumnCyclerRotator — each step is one rotation packet.
+        // Fewest steps to bring depth d into the hand: FORWARD d+1 steps (each
+        // brings pocket 0 into the hand) or BACKWARD count-d steps (each brings
+        // the topmost pocket into the hand). Take the shorter direction, as
+        // ColumnCyclerRotator does, since each step is one rotation packet.
         int fwdSteps = depth + 1;
         int bwdSteps = count - depth;
         boolean forward = fwdSteps <= bwdSteps;
@@ -149,9 +149,9 @@ public final class PocketCyclable implements HotbarCyclable {
         // source, so a pocket it chose is one this bring will run for.
         if (!allowsBringToHotbar(slot, take, put)) return CyclerOperation.NO_OP;
         rotate(hotbar, count, forward, steps, take, put);
-        // Undo: same step count, opposite direction. Capture the parameters so
-        // the reversal doesn't depend on (possibly drifted) current state —
-        // matches the CyclerOperation drift-tolerance contract.
+        // Undo: same step count, opposite direction. The parameters are captured
+        // so the reversal doesn't depend on current state, which may have
+        // drifted, as the CyclerOperation contract requires.
         final int undoHotbar = hotbar;
         final int undoCount = count;
         final int undoSteps = steps;
@@ -171,19 +171,19 @@ public final class PocketCyclable implements HotbarCyclable {
      */
     @Override
     public boolean quickMoveOut(int slot, BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
-        // Same claim check as bringToHotbar — only our revealed pockets.
+        // Same id check as bringToHotbar: only this cycler's shown pockets.
         if (hotbarPositionOf(slot) == -1) return false;
         if (!allowsQuickMoveOut(slot, take, put)) {
             // Ours, and refused. True, not false: false would tell the caller to
             // click this pocket id as an ordinary inventory slot.
             return true;
         }
-        // Server-authoritative move: the in-world pocket slot is inert
-        // client-side, so the server runs the real quick-move and routes the
-        // content (totem → equipment slot, armor → armor slot) the same way a
-        // shift-click would, then syncs the result back. No hotbar slot
-        // changes here (the content leaves the pocket for its destination), so
-        // unlike bringToHotbar there's no Auto-Restock slot to re-baseline.
+        // The server does the move: in the world the pocket slot is inert on the
+        // client, so the server runs the real quick-move and routes the item
+        // (totem to the equipment slot, armor to its armor slot) the way a
+        // shift-click would, then syncs the result back. No hotbar slot changes
+        // here (the item leaves the pocket for its destination), so unlike
+        // bringToHotbar there's no Restock slot to reset.
         ClientPlayNetworking.send(new PocketQuickMoveC2S(hotbarOf(slot), depthOf(slot), take.id(), put.id()));
         return true;
     }
@@ -220,13 +220,10 @@ public final class PocketCyclable implements HotbarCyclable {
                 player.inventoryMenu, player, hotbarOf(slot), depthOf(slot), take);
     }
 
-    /**
-     * Send {@code steps} one-step rotation requests for {@code hotbar}'s ring,
-     * and mark the slot as deliberately-changing so Auto-Restock re-baselines
-     * it across the rotation's round-trip rather than mis-reading the
-     * swapped-in tool as a damage / run-out event. (See the class javadoc for
-     * why pockets need this and Column Cycler doesn't.)
-     */
+    // Sends steps one-step rotation requests for hotbar's ring, and marks the
+    // slot as deliberately changing so Restock resets its baseline across the
+    // round trip rather than reading the swapped-in tool as damaged or run out.
+    // (The class doc explains why pockets need this and Column Cycler doesn't.)
     private static void rotate(int hotbar, int count, boolean forward, int steps,
                                BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
         InventoryPlusApi.suppressRestockFor(hotbar);

@@ -72,12 +72,10 @@ public final class MaxSettingsTabs {
         Tabs.addTo(MENU, Tabs.tab(id).label(Component.literal(label)).body(body));
     }
 
-    // ── Bodies ──────────────────────────────────────────────────────────
-    //
-    // The frame Inventory Plus's tabs have (Trev, 2026-09-27): the title, a
-    // description, Reset to Defaults, the on/off checkbox, a line, then one
+    // Tab bodies. Each has the frame Inventory Plus's tabs have: the title, a
+    // description, Reset to Defaults, the on/off switch, a line, then one
     // setting per line, all greyed while the feature is off. Every reach
-    // lives in Inventory Plus's Reach tab.
+    // setting is in Inventory Plus's Reach tab.
 
     private static List<PanelElement> pockets() {
         return new Body()
@@ -107,7 +105,7 @@ public final class MaxSettingsTabs {
                                 "elytraSlotEnabled", "totemSlotEnabled", "equipmentHudCue"))
                 .checkbox("Show the Equipment Slots button",
                         IMConfig::equipmentSlotsShowButton, IMConfig::setEquipmentSlotsShowButton, () -> false)
-                // Each slot on its own (Trev, 2026-10-04).
+                // Each slot can be turned off on its own.
                 .checkbox("Elytra slot", IMConfig::elytraSlotEnabled, IMConfig::setElytraSlotEnabled, () -> false)
                 .checkbox("Totem slot", IMConfig::totemSlotEnabled, IMConfig::setTotemSlotEnabled, () -> false)
                 .checkbox("Show elytra and totem icons beside the hotbar",
@@ -133,11 +131,9 @@ public final class MaxSettingsTabs {
         }
     }
 
-    // ── Rows ────────────────────────────────────────────────────────────
-    //
-    // ponytail: Inventory Plus's SettingsBody, trimmed to what these three tabs
-    // use; it is internal to Inventory Plus, so it can't be shared. If a third
-    // mod adds tabs, the row vocabulary belongs in MenuKit instead.
+    // Rows. A copy of Inventory Plus's SettingsBody, trimmed to what these
+    // three tabs use; it is internal to Inventory Plus, so it can't be shared.
+    // If a third mod adds tabs, these row builders belong in MenuKit instead.
 
     private static final class Body {
         /**
@@ -155,10 +151,10 @@ public final class MaxSettingsTabs {
         private BooleanSupplier featureOn = () -> true;
 
         /**
-         * The frame, as Inventory Plus's tabs have it (Trev, 2026-09-30): the
-         * mod's name centred, the title, the description, then Reset
-         * to Defaults (asking first through Inventory Plus's menu, then
-         * running {@code reset}) with the On/Off switch after it, at the left, then the line.
+         * The frame, as Inventory Plus's tabs have it: the title, the
+         * description, then Reset to Defaults (asking first through Inventory
+         * Plus's menu, then running {@code reset}) with the On/Off switch after
+         * it, at the left, then the line.
          */
         Body frame(String title, String description, BooleanSupplier on, Consumer<Boolean> setOn,
                    Runnable reset) {
@@ -169,8 +165,8 @@ public final class MaxSettingsTabs {
             y += 14;
             out.add(TextLabel.builder().at(0, y).text(Component.literal(description)).build());
             y += 16;
-            // Under the description, above the line (Trev, 2026-10-03): Reset
-            // furthest left, then the switch.
+            // Under the description, above the line: Reset furthest left, then
+            // the switch.
             out.add(Flow.builder().at(0, y).gap(10, 4)
                     .add(Button.builder().label(Component.literal("Reset to Defaults")).size(0, 16)
                             .onClick(() -> InventoryPlusApi.confirmInSettings("Reset " + title + " to defaults?",
@@ -200,7 +196,6 @@ public final class MaxSettingsTabs {
                     .disabledWhen(() -> !on.getAsBoolean()).build();
         }
 
-        /** A working key: Keybindery's button, labelled with the key's name. */
         // A setting is its text on one line and its control below it, except a
         // checkbox, inline with its text; settings sit in categories. As in
         // Inventory Plus's tabs.
@@ -221,6 +216,7 @@ public final class MaxSettingsTabs {
             y += 12;
         }
 
+        /** A working key: Keybindery's button, labelled with the key's name. */
         Body key(KeyMapping key) {
             label(Component.translatable(key.getName()));
             out.add(ChordButton.builder(key).at(0, y).disabledWhen(gated(() -> false)).build());

@@ -17,8 +17,8 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Inventory Max's own slot operation, Pocket Cycler
- * ({@code plans/slot-operations.md}), and the recipe it is built with.
+ * Inventory Max's own slot operation, Pocket Cycler, and the recipe it is
+ * built with.
  *
  * <p>Common code, safe on a dedicated server: it names MenuKit types only. A
  * pocket move can also serve another mod's operation (Inventory Plus's restock
@@ -38,8 +38,8 @@ public final class InventoryMaxOperations {
      * listed from the title screen and known to a dedicated server. Idempotent.
      *
      * <p>It moves items between a hotbar slot and the pockets behind it, so it
-     * applies to the hotbar and the pockets (Designer, 2026-09-30), the same
-     * shape as Inventory Plus's cyclers. ponytail: MenuKit's {@code AppliesTo}
+     * applies to the hotbar and the pockets, the same shape as Inventory Plus's
+     * cyclers. A known limit: MenuKit's {@code AppliesTo}
      * cannot name the hotbar and pockets without the main inventory, because a
      * pocket declares {@code PLAYER_INVENTORY} and goes where that category
      * goes; so it takes the carried slots and drops the equipment slots. The
@@ -57,7 +57,7 @@ public final class InventoryMaxOperations {
      * The operation a pocket packet names, as the server knows it: any operation
      * some mod defined, typed as the allow/deny kind every slot operation is.
      * {@code null} for an id nobody defined, or of another type; the caller
-     * drops the packet rather than guess (never read as Pocket Cycler).
+     * then drops the packet rather than guess (it is never read as Pocket Cycler).
      */
     @SuppressWarnings("unchecked")
     public static @Nullable BehaviorKey<TriBool> served(Identifier id) {
@@ -69,7 +69,7 @@ public final class InventoryMaxOperations {
      * MenuKit's recipe for an operation of one's own ({@code docs/recipes.md}): a
      * {@link TriBool} defaulting to allowed, on the server tier, for vanilla and
      * created slots. {@link BehaviorKey} is a record, so the same recipe with the
-     * same id yields an EQUAL key, wherever it is built.
+     * same id gives an equal key, wherever it is built.
      */
     public static BehaviorKey<TriBool> recipe(String namespace, String path) {
         return BehaviorKey.of(Identifier.fromNamespaceAndPath(namespace, path),

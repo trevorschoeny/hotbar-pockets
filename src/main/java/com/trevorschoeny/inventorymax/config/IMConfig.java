@@ -16,17 +16,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Global IM config — feature toggles for Pocket Cycler. Mirrors IP's
- * {@code IPConfig} static-field + JSON pattern. Persisted to
- * {@code config/inventorymax/config.json}.
+ * Global IM config: the feature toggles. Follows IP's {@code IPConfig} pattern
+ * of static fields plus JSON, saved to {@code config/inventorymax/config.json}.
  *
- * <p>IM owns its own config file + ModMenu entry rather than extending IP's
- * (dependency direction is IM→IP; IM storing state in IP's file would invert
- * ownership). Reuses IP's {@link PocketHudMode} enum for the shared cycle HUD.
+ * <p>IM has its own config file and ModMenu entry rather than extending IP's.
+ * IM depends on IP, not the other way round, so storing IM state in IP's file
+ * would invert ownership. Uses {@link PocketHudMode} for the shared cycle HUD.
  *
- * <p>Per-world pocket counts are NOT here — those live per-world in
- * {@code PocketState} (different layouts per world, same as Column Cycler's
- * slot membership).
+ * <p>Pocket counts are not here. They live per world in {@code PocketState}
+ * (each world can have a different layout, like Column Cycler's slot membership).
  */
 public final class IMConfig {
 
@@ -35,55 +33,53 @@ public final class IMConfig {
     private static final int CURRENT_VERSION = 1;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    // Pocket Cycler master toggle. Default ON — installing IM is itself the
-    // opt-in; pockets are a manual feature (not automation), so the
-    // conservative-automation-default rule doesn't apply.
+    // Pocket Cycler master toggle. Default on: installing IM is the opt-in, and
+    // pockets are a manual feature, not automation, so the rule that automation
+    // defaults off doesn't apply.
     private static boolean pocketCyclerEnabled = true;
-    // Shared cycle HUD mode for pockets (None / Mini-hotbar). Default
-    // MINI_HOTBAR, matching Column Cycler.
+    // Shared cycle HUD mode for pockets (None or Mini-hotbar). Defaults to
+    // MINI_HOTBAR, like Column Cycler.
     private static PocketHudMode pocketHudMode = PocketHudMode.MINI_HOTBAR;
-    // "Pockets supply automation" is gone (Reach build stage 4): whether
-    // Restock or Auto Tool Switch may take from pockets is the Pockets box in
+    // "Pockets supply automation" is gone. Whether Restock or Auto Tool Switch
+    // may take from pockets is now the Pockets box in
     // their reach, in Inventory Plus's Reach tab. A player who had it off gets
     // those boxes cleared once, on upgrade (InventoryMaxClient).
     private static @org.jetbrains.annotations.Nullable Boolean legacyPocketsSupplyAutomation;
-    // Equipment Slots (elytra + totem) master toggle. Default ON. OFF hides
-    // the slots (content persists, inert — same model as a 0-count pocket
-    // column) and disarms the slot behaviors: glide, totem-fires-last,
-    // totem auto-restock, HUD cues, shift-click routing. The behavior gates
-    // are read where the code runs (client render / server mixins) — in
-    // singleplayer both read the same file; on a dedicated server the
-    // server's config governs the server-side behaviors (mending pattern).
+    // Equipment Slots (elytra and totem) master toggle, default on. Off hides
+    // the slots (their contents stay, inert, like a pocket column with count 0)
+    // and disarms the slot behaviors: glide, totem-fires-last, totem restock,
+    // HUD cues, shift-click routing. Each gate is read where its code runs
+    // (client render or server mixin). In singleplayer both read the same
+    // file; on a dedicated server the server's config governs the server-side
+    // behaviors, the same as mending.
     private static boolean equipmentSlotsEnabled = true;
-    // The elytra/totem HUD cue icons beside the hotbar (sub of Equipment
-    // Slots). Default ON — matches shipped behavior.
+    // The elytra and totem HUD icons beside the hotbar (under Equipment Slots).
+    // Default on, as shipped.
     private static boolean equipmentHudCue = true;
-    // Each slot on its own under the master (Trev, 2026-10-04). Off hides that
-    // slot and disarms its behaviors only: elytra = glide + elytra routing,
-    // totem = totem-fires-last + totem restock + totem routing.
+    // Each slot also has its own switch under the master. Off hides that slot
+    // and disarms only its behaviors: for the elytra, glide and elytra routing;
+    // for the totem, totem-fires-last, totem restock and totem routing.
     private static boolean elytraSlotEnabled = true;
     private static boolean totemSlotEnabled = true;
-    // The on/off switches in Inventory Plus's inventory column (Trev, 2026-10-04).
-    // Hidden by default (Trev, 2026-10-11 smoke: "too many buttons"); each
-    // feature's own default and keys are unchanged.
+    // The on/off switches in Inventory Plus's inventory column. Hidden by
+    // default so the column doesn't fill up with buttons; each feature's own
+    // default and keys are unchanged.
     private static boolean pocketsShowButton = false;
     private static boolean equipmentSlotsShowButton = false;
     private static boolean mendAnywhereShowButton = false;
-    // Container locks: the old master toggle is gone (Reach build stage 4).
+    // Container locks: the old master toggle is gone.
     // Whether a player's container locks are also kept on the server is that
     // player's choice, Inventory Plus's "Also keep container locks on the
     // server"; the server enforces whatever the shared channel holds.
-    // "Mend any item in the inventory" — ambient XP mending across the whole
-    // vanilla inventory, not just equipped/registered. Default ON (the feature is
-    // the point; equip + pocket mending are separate always-on slot opt-ins).
-    // Gates only the vanilla-inventory mend provider, read server-side.
+    // Mend Anywhere: XP mending across the whole vanilla inventory, not just
+    // equipped or registered slots. Default on, since that is the whole
+    // feature; equipment and pocket mending are separate, always-on slot
+    // opt-ins. Gates only the vanilla-inventory mend provider, read server-side.
     private static boolean mendInventoryItems = true;
 
-    /**
-     * Every setting at its default, taken before the file is read, so a tab's
-     * Reset to Defaults ({@link #reset}) never restates a default by hand.
-     * Declared after every field, so each is at its default here.
-     */
+    // Every setting at its default, taken before the file is read, so a tab's
+    // Reset to Defaults (reset) never restates a default by hand. Declared
+    // after every field, so each is still at its default here.
     private static final JsonObject DEFAULTS = settingsJson();
 
     private static boolean loaded = false;
@@ -115,7 +111,6 @@ public final class IMConfig {
         }
     }
 
-    /** Reads every setting {@code root} has; the rest keep their values. */
     private static void apply(JsonObject root) {
         pocketCyclerEnabled = readBool(root, "pocketCyclerEnabled", pocketCyclerEnabled);
         pocketHudMode = PocketHudMode.fromName(readString(root, "pocketHudMode", null), pocketHudMode);
@@ -156,7 +151,6 @@ public final class IMConfig {
                 ? root.get(key).getAsString() : fallback;
     }
 
-    /** Every setting as the file writes it, without the version. */
     private static JsonObject settingsJson() {
         JsonObject root = new JsonObject();
         root.addProperty("pocketCyclerEnabled", pocketCyclerEnabled);

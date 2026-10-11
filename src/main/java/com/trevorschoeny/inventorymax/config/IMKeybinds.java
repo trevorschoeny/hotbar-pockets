@@ -9,20 +9,14 @@ import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * IM's keybinds, registered as vanilla {@link KeyMapping}s so they appear in
- * the Controls menu and are user-rebindable. Mirrors IP's {@code IPKeybinds}.
+ * IM's keybinds, registered as vanilla {@link KeyMapping}s so they show in the
+ * Controls menu and can be rebound. They live in IM rather than IP's
+ * {@code IPKeybinds} because IM depends on IP, not the reverse.
  *
- * <p>Pocket keybinds live here (in IM), not in IP's {@code IPKeybinds} — the
- * dependency direction is IM→IP, so IP must not carry IM-specific bindings.
- *
- * <p>Pockets reveal on hover (no keybind) and attach/resize via the on-screen
- * +/− buttons, so there's no attach keybind — only cycle.
- *
- * <ul>
- *   <li><b>Cycle Forward / Backward</b> — rotate the active pocket cycle.
- *       Defaults to the <b>→ / ←</b> arrow keys (Trev 2026-06-04), distinct
- *       from Column Cycler's {@code ] [}.</li>
- * </ul>
+ * <p>Pockets show on hover and are added or resized with the on-screen plus and
+ * minus buttons, so the only keys are Cycle Forward and Cycle Backward. They
+ * default to the Right and Left arrow keys, which don't clash with Column
+ * Cycler's {@code ] [}.
  */
 public final class IMKeybinds {
 

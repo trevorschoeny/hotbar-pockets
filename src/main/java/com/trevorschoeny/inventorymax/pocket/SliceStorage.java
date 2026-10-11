@@ -8,18 +8,18 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * A fixed-length window onto a larger backing {@link Storage} — used to give
- * each (hotbar, depth) pocket slot its own 1-slot view of the shared 27-slot
+ * A fixed-length window onto a larger backing {@link Storage}. Gives each
+ * (hotbar, depth) pocket slot its own 1-slot view of the shared 27-slot
  * {@link Pockets#POCKETS} attachment.
  *
- * <h3>Advancement parity (§0045 Gap 3 — consumer-owned)</h3>
+ * <h3>Advancements</h3>
  *
- * RegisteredSlots slots back a separate container, so they don't feed vanilla's
- * {@code InventoryChangeTrigger} automatically the way real inventory slots
- * do. MenuKit deliberately ships no advancement API (narrow surface). So we
- * fire the trigger ourselves: on a <b>server-side</b> write of a non-empty
- * stack into a pocket, we call {@link CriteriaTriggers#INVENTORY_CHANGED} for
- * the owning player, giving pockets the same advancement behavior as normal
+ * Registered slots are backed by a separate container, so they don't feed
+ * vanilla's {@code InventoryChangeTrigger} the way real inventory slots do, and
+ * MenuKit deliberately has no advancement API. So this fires the trigger
+ * itself: on a <b>server-side</b> write of a non-empty stack, it calls
+ * {@link CriteriaTriggers#INVENTORY_CHANGED} for the owning player, which gives
+ * pockets (and the equipment slots) the same advancement behavior as normal
  * inventory slots.
  */
 public final class SliceStorage implements Storage {
@@ -44,8 +44,8 @@ public final class SliceStorage implements Storage {
     @Override
     public void setStack(int localIndex, ItemStack stack) {
         backing.setStack(offset + localIndex, stack);
-        // Advancement parity — server-side, non-empty writes trigger the
-        // same criterion real inventory slots do.
+        // Server-side, non-empty writes trigger the same criterion real
+        // inventory slots do.
         if (!stack.isEmpty()
                 && !player.level().isClientSide()
                 && player instanceof ServerPlayer sp) {

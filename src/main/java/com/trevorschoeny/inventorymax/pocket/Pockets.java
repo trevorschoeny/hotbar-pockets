@@ -15,23 +15,22 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Pocket Cycler constants + the server-persistent content storage.
+ * Pocket constants and the server-persistent pocket storage.
  *
- * <h3>Structure model (the §0045 fixed-slot + client-gated composition)</h3>
+ * <h3>Structure</h3>
  *
- * The slot kit slots a <b>fixed</b> set of slots at menu construction; it
- * has no dynamic per-slot structure. So we slot the <b>maximum</b> — 3 pocket
- * slots above every one of the 9 hotbar slots (27 total) — as real,
- * server-synced, persistent slots, and let a <b>client-side per-world count</b>
- * ({@link PocketState}) decide how many of each hotbar slot's 3 pockets are
- * revealed + interactive. Hidden pockets are inert (§0021): invisible and
- * non-interactive, but their content still persists server-side. "Attaching"
- * a pocket is just raising the count from 0; resizing is changing it (1–3).
+ * The slot kit adds a <b>fixed</b> set of slots at menu construction; it can't
+ * add or remove slots per player later. So the <b>maximum</b> is always added,
+ * 3 pocket slots for each of the 9 hotbar slots (27 total), as real,
+ * server-synced, persistent slots, and a <b>client-side per-world count</b>
+ * ({@link PocketState}) decides how many of each hotbar slot's 3 pockets are
+ * shown and usable. Hidden pockets are inert: invisible and non-interactive,
+ * but their contents still persist on the server. Adding a pocket just raises
+ * the count from 0; resizing changes it (1 to 3).
  *
- * <p>Each (hotbar, depth) pocket is its own single-slot slot with its own
- * panel + reveal predicate — that's what gives per-depth reveal granularity
- * the panel-level reveal API otherwise wouldn't (one panel reveals all-or-
- * nothing).
+ * <p>Each (hotbar, depth) pocket is its own single-slot panel with its own
+ * reveal predicate. That is what lets each depth show on its own, which the
+ * panel-level reveal API can't do (one panel shows all or nothing).
  */
 public final class Pockets {
 
@@ -39,45 +38,44 @@ public final class Pockets {
 
     public static final String MOD_ID = "inventorymax";
 
-    /** Hotbar slots (0–8). */
+    /** Hotbar slots (0 to 8). */
     public static final int HOTBAR_SLOTS = 9;
     /** Max pockets stacked above one hotbar slot. */
     public static final int MAX_PER_SLOT = 3;
     /** Total registered pocket slots (9 × 3). */
     public static final int TOTAL = HOTBAR_SLOTS * MAX_PER_SLOT;
 
-    // ─── Screen-relative layout (added to leftPos/topPos at render time) ──
+    // Screen-relative layout (added to leftPos/topPos at render time).
     /** Vanilla hotbar slot row y. */
     public static final int HOTBAR_Y = 142;
     /**
      * X of the pocket column (and hotbar-slot hover). 7, not 8: a registered
      * slot's 18px frame must sit 1px left of the vanilla item x so the pocket
-     * frame lines up with the vanilla hotbar slot frame below it (Trev
-     * 2026-06-02 — "both panels a px too far right").
+     * frame lines up with the vanilla hotbar slot frame below it (at 8 both
+     * panels were a pixel too far right).
      */
     public static final int HOTBAR0_X = 7;
     /** Vanilla slot pitch. */
     public static final int SLOT = 18;
     /** Gap between the hotbar slot and the bottom of the pocket column. */
     public static final int HOTBAR_GAP = 8;
-    /** Height of the +/− button row drawn above the topmost pocket. */
+    /** Height of the plus and minus button row drawn above the topmost pocket. */
     public static final int BUTTON_ROW_H = 9;
 
     /**
-     * Player-attached pocket content — 27 slots, survives logout/restart
-     * (§0034). Declared at common init. The slot slices this per (hotbar,
-     * depth).
+     * Player-attached pocket storage: 27 slots, survives logout and restart.
+     * Declared at common init. Each slot takes its own (hotbar, depth) slice.
      */
     public static StorageAttachment<Player, NonNullList<ItemStack>> POCKETS;
 
-    /** Common-init registration. Call from the main entrypoint. */
+    /** Call from the main entrypoint at common init. */
     public static void register() {
         POCKETS = StorageAttachment.playerAttached(MOD_ID, "pockets", TOTAL);
     }
 
     /**
      * Declares each pocket slot's MENDING opt-in by the slot's address, once at
-     * common init — behavior-by-address (the creation mixin is behavior-free). A
+     * common init (the creation mixin builds the slots without behavior). A
      * damaged Mending item in any pocket joins the XP-orb repair pool. Idempotent.
      */
     public static void declareSlotBehavior() {
@@ -95,7 +93,7 @@ public final class Pockets {
         return hotbar * MAX_PER_SLOT + depth;
     }
 
-    /** Unique slot group/panel id for (hotbar, depth). */
+    /** Slot group id for (hotbar, depth). */
     public static String groupId(int hotbar, int depth) {
         return "pocket_" + hotbar + "_" + depth;
     }
@@ -126,8 +124,10 @@ public final class Pockets {
         }
     }
 
-    /** True for any pocket slot's group id (see {@link #groupId}) — used to ask
-     *  "does this screen's live menu actually carry our pockets?". */
+    /**
+     * True for any pocket slot's group id (see {@link #groupId}). Used to check
+     * whether a screen's live menu actually has the pockets.
+     */
     public static boolean isPocketGroup(String groupId) {
         return groupId.startsWith("pocket_");
     }
@@ -141,19 +141,19 @@ public final class Pockets {
      * Screen-relative y of a pocket at {@code depth} (0 = closest to the
      * hotbar). Pockets stack upward from just above the hotbar.
      *
-     * <p>This is the original <b>vertical</b> column layout — now used only as
-     * the slot's construction seed. At runtime the revealed pockets are moved
-     * into the floating horizontal row below ({@link #pocketRowX} /
-     * {@link #pocketRowY}); each frame the pocket's {@code SlotElement} writes
-     * that row position straight into the live slot's {@code Slot.x/y}
-     * (MenuKit 3.2.0), which is what vanilla actually draws.
+     * <p>This is the original <b>vertical</b> column layout, now used only as the
+     * slot's starting position. At runtime the shown pockets move into the
+     * floating horizontal row ({@link PocketGeometry#rowX} and
+     * {@link PocketGeometry#rowY}); each frame the pocket's {@code SlotElement}
+     * writes that row position straight into the live slot's {@code Slot.x/y}
+     * (since MenuKit 3.2.0), which is what vanilla actually draws.
      */
     public static int pocketY(int depth) {
         return HOTBAR_Y - HOTBAR_GAP - (depth + 1) * SLOT;
     }
 
-    // The floating-row + live-hotbar geometry (absolute screen pixels, resolved
-    // per frame off the actual hotbar slots — creative-aware) lives in the
-    // client-only {@link PocketGeometry}; this class stays server-safe for the
-    // slot mixin and PocketHoverState.
+    // The floating-row and live-hotbar geometry (absolute screen pixels, worked
+    // out each frame from the actual hotbar slots, creative included) is in the
+    // client-only PocketGeometry, so this class stays server-safe for the slot
+    // mixin and PocketHoverState.
 }

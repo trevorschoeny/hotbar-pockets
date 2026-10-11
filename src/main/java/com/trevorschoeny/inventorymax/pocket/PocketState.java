@@ -24,15 +24,14 @@ import java.util.Collections;
 import java.util.ArrayList;
 
 /**
- * Client-side, per-world pocket <b>count</b> state: how many pockets (0–3) are
- * attached to each of the 9 hotbar slots. This is the structure layer of the
- * §0045 fixed-slot composition — the 27 slots always exist server-side; this
- * decides how many of each hotbar slot's 3 are revealed + interactive.
+ * Client-side, per-world pocket <b>counts</b>: how many pockets (0 to 3) are
+ * attached to each of the 9 hotbar slots. The 27 slots always exist on the
+ * server; this decides how many of each hotbar slot's 3 are shown and usable.
  *
- * <p>Client-side + per-world (mirrors Column Cycler's slot membership): players
- * have different layouts per world, and the count only gates client reveal —
- * the server doesn't track it (rotation/eviction payloads carry the count).
- * Persisted to {@code config/inventorymax/pockets.json}.
+ * <p>Client-side and per world, like Column Cycler's slot membership: players
+ * have different layouts per world, and the count only controls what the client
+ * shows. The server doesn't track it (the rotation and eviction payloads carry
+ * the count). Saved to {@code config/inventorymax/pockets.json}.
  *
  * <p>Pushes counts into the server-safe {@link PocketHoverState} so the slot's
  * reveal predicate sees them.
@@ -48,7 +47,7 @@ public final class PocketState {
     private static final List<Integer> NO_POCKETS = Collections.nCopies(Pockets.HOTBAR_SLOTS, 0);
 
     /**
-     * Pocket count (0-3) for each of the 9 hotbar slots, per world. Inventory
+     * Pocket count (0 to 3) for each of the 9 hotbar slots, per world. Inventory
      * Plus's {@link WorldStore}: an immutable list per world, read without
      * creating anything, saved only when a count actually changes. A world
      * with no pockets anywhere is not stored at all, which is what the old
@@ -114,16 +113,16 @@ public final class PocketState {
         PocketHoverState.setCount(hotbar, count(hotbar));
     }
 
-    /** Grow a pocket panel (+1, capped at 3). At 0 this is the "attach". */
+    /** Grows a pocket panel by one, up to 3. At 0 this adds the first pocket. */
     public static void grow(int hotbar) {
         int c = count(hotbar);
         if (c < Pockets.MAX_PER_SLOT) setCount(hotbar, c + 1);
     }
 
     /**
-     * Shrink a pocket panel (−1). Evicts the removed top pocket's item to the
-     * inventory (or drops it) via a server payload, then lowers the count.
-     * At count 1, this detaches (→ 0).
+     * Shrinks a pocket panel by one. Moves the removed top pocket's item to the
+     * inventory (or drops it) through a server payload, then lowers the count.
+     * At count 1 this removes the last pocket.
      */
     public static void shrink(int hotbar) {
         int c = count(hotbar);
@@ -134,7 +133,7 @@ public final class PocketState {
         setCount(hotbar, newCount);
     }
 
-    /** Push every hotbar slot's count into the server-safe hover state. */
+    /** Pushes every hotbar slot's count into the server-safe hover state. */
     public static void pushAll() {
         List<Integer> counts = COUNTS.get();
         for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {

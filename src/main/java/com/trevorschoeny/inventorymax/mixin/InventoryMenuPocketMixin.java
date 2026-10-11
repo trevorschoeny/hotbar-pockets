@@ -18,18 +18,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * The consumer-owned pocket slot (§0045). Injects at the TAIL of
- * {@link InventoryMenu}'s constructor and slots the maximum pocket set —
- * a 1-slot slot for every (hotbar slot, depth) pair, 27 in all.
+ * Creates the pocket slots. Injects at the TAIL of {@link InventoryMenu}'s
+ * constructor and adds the full pocket set: one slot for every (hotbar slot,
+ * depth) pair, 27 in all.
  *
- * <p>Each slot is its own panel with its own reveal predicate keyed to
- * {@link PocketHoverState#isRevealed(int, int)}, which gives per-depth reveal
- * granularity (the panel-level reveal API alone can't show 1-of-3). All 27
- * slots always exist server-side (so content syncs + persists); the client
- * reveals only the configured count per hotbar slot.
+ * <p>Each slot is its own panel with its own reveal predicate based on
+ * {@link PocketHoverState#isRevealed(int, int)}, so each depth can be shown on
+ * its own (the panel-level reveal API alone can't show 1 of 3). All 27 slots
+ * always exist on the server, so their contents sync and persist; the client
+ * shows only the configured count per hotbar slot.
  *
- * <p>Running at the constructor TAIL means the slot re-applies on every menu
- * rebuild (login, respawn, dimension change) on both sides — no lifecycle hook.
+ * <p>Running at the constructor TAIL means the slots come back on every menu
+ * rebuild (login, respawn, dimension change) on both sides, with no lifecycle
+ * hook.
  */
 @Mixin(InventoryMenu.class)
 public abstract class InventoryMenuPocketMixin {
@@ -51,7 +52,7 @@ public abstract class InventoryMenuPocketMixin {
                 CreatedSlots.onto(menu, player)
                         .panel(Pockets.panelId(n, d))
                         .group(Pockets.groupId(n, d))
-                        // Pockets ARE general player storage: a feature searching the
+                        // Pockets are general player storage: a feature searching the
                         // player's inventory should find a stack in a pocket the same
                         // way it finds one in the main grid. Unlike the equipment slots,
                         // which get their own categories precisely so searches skip them.
@@ -61,9 +62,9 @@ public abstract class InventoryMenuPocketMixin {
                         // Server-safe predicate (no client imports); only
                         // evaluated client-side by MenuKit.
                         .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
-                        // Behavior-FREE creation: ambient MENDING (a damaged Mending
-                        // item in any pocket repairs from XP) is declared by the slot's
-                        // address in Pockets.declareSlotBehavior(), not on the builder.
+                        // Created without behavior: MENDING (a damaged Mending item in
+                        // any pocket repairs from XP) is declared by the slot's address
+                        // in Pockets.declareSlotBehavior(), not on the builder.
                         .register();
             }
         }

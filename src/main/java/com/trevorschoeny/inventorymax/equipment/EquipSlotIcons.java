@@ -5,16 +5,15 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 /**
- * Empty-slot placeholder icons for the equipment slots — the faint elytra/totem
- * silhouettes shown when a slot is empty, mirroring vanilla's armor-slot ghosts.
+ * Empty-slot placeholder icons for the equipment slots: the faint elytra and
+ * totem silhouettes shown when a slot is empty, like vanilla's armor-slot icons.
  *
- * <p><b>Why we draw these ourselves.</b> MenuKit owns registered-slot rendering, but
- * which placeholder belongs on which slot is consumer knowledge, so we draw over
- * its exposed slot primitives (§0045: library exposes the capability, consumer
- * applies it). MenuKit's {@link SlotRendering#drawGhostIcon} dims to 40% (for
- * <em>disabled/filtered</em> slots); vanilla draws its {@code #555555} empty-slot
- * icons at <b>full opacity</b>, and Trev's art matches that color, so we blit at
- * full opacity to land exactly on the vanilla look.
+ * <p>MenuKit renders registered slots, but which placeholder belongs on which
+ * slot is the consumer's knowledge, so IM draws them over MenuKit's exposed slot
+ * primitives. MenuKit's {@link SlotRendering#drawGhostIcon} dims to 40% (it is
+ * meant for disabled or filtered slots). Vanilla draws its {@code #555555}
+ * empty-slot icons at full opacity, and these sprites use the same color, so
+ * they are blitted at full opacity to match vanilla exactly.
  *
  * <p>Sprites live at {@code assets/inventorymax/textures/gui/sprites/container/slot/}
  * and are auto-collected into the GUI atlas (no atlas json needed).

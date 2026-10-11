@@ -6,20 +6,21 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 /**
- * Client→server request to rotate a hotbar slot's pocket cycle.
+ * Client-to-server request to rotate a hotbar slot's pocket cycle.
  *
- * <h3>Why server-authoritative</h3>
+ * <h3>Why the server does it</h3>
  *
- * Pocket cycling happens in-world (no screen) as well as in the inventory. In
- * world, the client's pocket slots are inert (hidden) — they reject clicks and
- * report empty — so a client-side click-rotation would desync. The server's
- * pocket slots are always active (MenuKit's side-aware reveal), so the server
- * can rotate the real content and {@code broadcastChanges} syncs it back. The
- * client just sends this intent; {@link PocketServerOps#rotate} does the work.
+ * Pockets cycle in the world (no screen open) as well as in the inventory. In
+ * the world, the client's pocket slots are inert and hidden: they reject clicks
+ * and report empty, so rotating them with client-side clicks would desync. The
+ * server's pocket slots are always active (MenuKit's reveal is side-aware), so
+ * the server rotates the real contents and {@code broadcastChanges} syncs them
+ * back. The client only sends the request; {@link PocketServerOps#rotate} does
+ * the work.
  *
  * <p>{@code count} is the client's current per-world pocket count for that
- * hotbar slot (the server doesn't track it). Trusting it is harmless — it only
- * bounds which pocket slots participate in the rotation.
+ * hotbar slot (the server doesn't track it). Trusting it is harmless, since it
+ * only limits which pocket slots take part in the rotation.
  *
  * <p>{@code take} and {@code put} name the operation the rotation serves by id:
  * the pocket's own cycle, or a restock or tool switch reaching a pocket (a

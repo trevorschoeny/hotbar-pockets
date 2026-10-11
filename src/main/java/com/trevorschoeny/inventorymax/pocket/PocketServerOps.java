@@ -11,17 +11,17 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Server-side pocket mutations — the authoritative side of cycling and
- * shrink-eviction. Operates directly on the player's pocket attachment +
- * inventory, then broadcasts so the client (whose pocket slots may be inert)
- * picks up the result via vanilla slot sync.
+ * Server-side pocket changes: the authoritative side of cycling and of emptying
+ * pockets on shrink. Works directly on the player's pocket attachment and
+ * inventory, then broadcasts, so the client (whose pocket slots may be inert)
+ * gets the result through vanilla slot sync.
  */
 public final class PocketServerOps {
 
     private PocketServerOps() {}
 
     /**
-     * Rotate the ring [hotbar slot, pocket 0 … pocket count-1] by one step.
+     * Rotates the ring [hotbar slot, pocket 0 to pocket count-1] by one step.
      * FORWARD brings pocket 0 into the hand and wraps the hand's item to the
      * topmost pocket; BACKWARD is the mirror.
      */
@@ -29,7 +29,7 @@ public final class PocketServerOps {
                               BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
         if (sp == null || hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
         count = Math.max(0, Math.min(Pockets.MAX_PER_SLOT, count));
-        if (count < 1) return; // need ≥2 ring members (1 pocket + hotbar)
+        if (count < 1) return; // a ring needs at least 2 members (1 pocket and the hotbar slot)
         // Asked again here, for the operation the packet names. The client asked
         // before sending, but Inventory Plus's locks live on the client, so the
         // server's answer is the one that holds for every other mod's vetoes.
@@ -38,7 +38,7 @@ public final class PocketServerOps {
         Storage pockets = Pockets.POCKETS.bind(sp);
         int m = count + 1;
         ItemStack[] items = new ItemStack[m];
-        // Visual top→bottom: pocket(count-1) … pocket0, then the hotbar item.
+        // Top to bottom as drawn: pocket count-1 down to pocket 0, then the hotbar item.
         for (int i = 0; i < count; i++) {
             int depth = count - 1 - i;
             items[i] = pockets.getStack(Pockets.flatIndex(hotbar, depth));
@@ -60,16 +60,17 @@ public final class PocketServerOps {
     }
 
     /**
-     * Quick-move a single pocket's content out toward its natural destination
-     * — the non-held restock path. Runs the authoritative
-     * {@code quickMoveStack} from the pocket's (always-active, server-side)
-     * slot, letting the existing routing carry it: vanilla equips armor to the
-     * matching empty armor slot; {@code InventoryMenuQuickMoveMixin} routes a
-     * totem/elytra to its equipment slot. {@code broadcastChanges} syncs the
-     * result back to the client (whose pocket slot may be inert).
+     * Quick-moves one pocket's contents to wherever a shift-click would send
+     * them: the restock path for slots the player isn't holding. Runs the
+     * authoritative {@code quickMoveStack} from the pocket's server-side slot
+     * (always active) and lets the existing routing move it: vanilla equips
+     * armor to the matching empty armor slot, and
+     * {@code InventoryMenuQuickMoveMixin} routes a totem or elytra to its
+     * equipment slot. {@code broadcastChanges} syncs the result back to the
+     * client (whose pocket slot may be inert).
      *
-     * <p>No-op when the pocket slot can't be found (slot absent) — the move
-     * simply doesn't happen, same failure mode as a missing replacement.
+     * <p>Does nothing when the pocket slot can't be found; the move just doesn't
+     * happen, the same as when there is no replacement.
      */
     public static void quickMove(ServerPlayer sp, int hotbar, int depth,
                                  BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
@@ -109,10 +110,10 @@ public final class PocketServerOps {
             if (stack.isEmpty()) continue;
             ItemStack moving = stack.copy();
             pockets.setStack(idx, ItemStack.EMPTY);
-            // Vanilla add-to-inventory (mutates `moving` to the remainder).
+            // Vanilla add-to-inventory (leaves the remainder in `moving`).
             sp.getInventory().add(moving);
             if (!moving.isEmpty()) {
-                sp.drop(moving, false); // no room → drop the remainder
+                sp.drop(moving, false); // no room, drop the remainder
             }
         }
         pockets.markDirty();

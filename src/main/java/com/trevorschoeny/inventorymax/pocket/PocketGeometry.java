@@ -11,14 +11,14 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Screen-space pocket geometry (client-only). Every coordinate here is an
- * <b>absolute screen pixel</b>, derived per call from the live hotbar slot
- * positions via MenuKit's {@link VanillaSlotResolver} — the same coordinate
- * space the pixel-panel origin suppliers and element input dispatch speak.
- * That one shared space is what makes the geometry correct on any screen that
- * surfaces the player inventory (survival + the creative inventory tab, the
- * creative {@code SlotWrapper} unwrapped by the resolver).
+ * <b>absolute screen pixel</b>, worked out on each call from the live hotbar
+ * slot positions via MenuKit's {@link VanillaSlotResolver}. That is the same
+ * coordinate space the pixel-panel origin suppliers and element input use,
+ * which is what keeps the geometry right on any screen that shows the player
+ * inventory (survival and the creative inventory tab, where the resolver
+ * unwraps the creative {@code SlotWrapper}).
  *
- * <p>Split out of {@link Pockets} because resolution needs the <em>screen</em>
+ * <p>Kept apart from {@link Pockets} because resolving needs the <em>screen</em>
  * (a client type); {@code Pockets} stays server-safe for the slot mixin and
  * {@link PocketHoverState}.
  */
@@ -26,17 +26,17 @@ public final class PocketGeometry {
 
     private PocketGeometry() {}
 
-    /** +/− button size (px). */
+    /** Plus and minus button size (px). */
     public static final int BUTTON_SIZE = 7;
-    /** Height of the +/− button strip (buttons + 2px breathing above/below). */
+    /** Height of the plus and minus button strip (buttons plus 2px above and below). */
     public static final int BUTTON_PANEL_H = BUTTON_SIZE + 4;
     /** Margin between the raised pockets-panel edge and the slot row. */
     public static final int ROW_PAD = 4;
 
     /**
-     * The hotbar slot {@code n} (0–8) as an absolute screen rect, or null when
-     * this screen doesn't surface it. {@code rect.x/y} = item top-left;
-     * {@code rect.frameX()/frameY()} = the 18px frame's top-left.
+     * The hotbar slot {@code n} (0 to 8) as an absolute screen rect, or null when
+     * this screen doesn't show it. {@code rect.x/y} is the item's top-left;
+     * {@code rect.frameX()/frameY()} is the 18px frame's top-left.
      */
     public static @Nullable SlotScreenRect hotbar(AbstractContainerScreen<?> screen, int n) {
         return VanillaSlotResolver.resolve(screen, n).orElse(null);
@@ -55,7 +55,7 @@ public final class PocketGeometry {
     }
 
     /**
-     * Absolute y of the floating pocket row — one slot-height above the hotbar
+     * Absolute y of the floating pocket row: one slot height above the hotbar
      * item row, leaving {@link Pockets#HOTBAR_GAP} between the row's bottom
      * edge and the hotbar slot's top.
      */
@@ -63,23 +63,23 @@ public final class PocketGeometry {
         return hotbar.y() - Pockets.HOTBAR_GAP - Pockets.SLOT;
     }
 
-    /** Absolute top of the +/− strip, just below the hotbar slot. */
+    /** Absolute top of the plus and minus strip, just below the hotbar slot. */
     public static int buttonsTop(SlotScreenRect hotbar) {
         return hotbar.y() + Pockets.SLOT;
     }
 
-    /** Absolute origin-x of the +/− strip (the − button's left edge). */
+    /** Absolute origin x of the plus and minus strip (the minus button's left edge). */
     public static int buttonsX(SlotScreenRect hotbar) {
         return hotbar.frameX() + 1;
     }
 
     /**
-     * Whether this screen's live menu actually carries our pocket slots — true
-     * on the survival inventory (the {@code CreatedSlot} sits directly in the menu)
-     * and the creative <em>inventory</em> tab (wrapped, unwrapped by
-     * {@link CreatedSlot#of}); false everywhere else. The hotbar alone
-     * isn't enough to gate on: creative's non-inventory tabs surface a hotbar
-     * but not the pockets, and container screens surface neither.
+     * Whether this screen's live menu actually has the pocket slots: true on the
+     * survival inventory (the {@code CreatedSlot} sits directly in the menu) and
+     * the creative <em>inventory</em> tab (wrapped, and unwrapped by
+     * {@link CreatedSlot#of}); false everywhere else. The hotbar alone isn't
+     * enough to go on: creative's other tabs show a hotbar but not the pockets,
+     * and container screens show neither.
      */
     public static boolean pocketsPresent(AbstractContainerScreen<?> screen) {
         for (Slot s : screen.getMenu().slots) {

@@ -6,14 +6,14 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
 /**
- * Client→server request to evict the items from a range of a hotbar slot's
- * pockets — depths {@code [fromDepth, toDepth)} — into the player's inventory
- * (or dropped if there's no room).
+ * Client-to-server request to move the items in a range of a hotbar slot's
+ * pockets, depths {@code [fromDepth, toDepth)}, into the player's inventory
+ * (or drop them if there's no room).
  *
- * <p>Sent when the player shrinks a pocket panel (the {@code −} button). The
- * count itself is client-per-world state; this payload just tells the server
- * which pocket depths to empty, server-side, using vanilla's
- * inventory-add-or-drop logic ({@link PocketServerOps#evict}).
+ * <p>Sent when the player shrinks a pocket panel with the minus button. The
+ * count itself is per-world client state; this payload only tells the server
+ * which pocket depths to empty, which it does with vanilla's add-or-drop logic
+ * ({@link PocketServerOps#evict}).
  */
 public record PocketEvictC2S(int hotbar, int fromDepth, int toDepth)
         implements CustomPacketPayload {

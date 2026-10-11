@@ -14,17 +14,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * HUD occupancy cue for the equipment slots — small elytra + totem item icons
- * stacked vertically (elytra above totem) to the left of the hotbar, each shown
- * only when its slot is filled (Trev, 2026-06-24). The elytra icon also shows
- * when an elytra is worn in the vanilla chest slot, so "you've got wings" reads
- * the same however you equipped them.
+ * HUD indicator for the equipment slots: small elytra and totem icons stacked
+ * left of the hotbar (elytra above totem), each shown only when its slot is
+ * filled. The elytra icon also shows when an elytra is worn in the vanilla
+ * chest slot, so it means the same thing however the wings were equipped.
  *
- * <p>Built on MenuKit's HUD primitive ({@code HudPanel}) — HUD is its UI
- * wheelhouse. Render-only, registered once at client init. Icon-only (no
- * count/durability overlay) for a clean little indicator. An empty supplier
- * renders nothing, so "show when occupied" falls out for free. Pixel position
- * is tunable via the anchor offsets below.
+ * <p>Built on MenuKit's {@code HudPanel}. Render-only, registered once at
+ * client init. Icons only, with no count or durability overlay. An empty
+ * supplier renders nothing, which is how an empty slot hides its icon. The
+ * pixel position is set by the anchor offsets below.
  */
 public final class EquipHud {
 
@@ -33,13 +31,13 @@ public final class EquipHud {
     // BOTTOM_CENTER tracks the hotbar's screen-centered position across GUI
     // scales; the offsets nudge the 16px icon column just left of the hotbar.
     private static final int ICON_SIZE = 12;  // 12px icons (¾ of vanilla's native 16px)
-    private static final int OFFSET_X = -99;  // snug to the hotbar (~2px gap, no awkward space)
+    private static final int OFFSET_X = -99;  // about 2px left of the hotbar
     // MenuKit 6.0.0: a HUD region sits 4px in from the edge it touches, so the
     // old anchor's -3 from the bottom is +1 from the region (same pixel).
     private static final int OFFSET_Y = 1;    // bottom icon aligned to the hotbar item row
     private static final int ICON_PITCH = 13; // elytra above totem (1px vertical gap)
 
-    /** Register the HUD cue. Call once from client init. */
+    /** Call once from client init. */
     public static void register() {
         HudPanel.builder(EquipmentSlots.MOD_ID + ":equip_cues")
                 .region(InsideRegion.BOTTOM_CENTER).offset(OFFSET_X, OFFSET_Y)

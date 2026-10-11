@@ -1,22 +1,22 @@
 package com.trevorschoeny.inventorymax.pocket;
 
 /**
- * Server-safe reveal/hover state for pockets, read by each slot's
+ * Server-safe reveal and hover state for pockets, read by each slot's
  * {@code revealWhen} predicate.
  *
- * <p><b>No client imports — by design.</b> The slot mixin runs on both sides
+ * <p><b>No client imports, on purpose.</b> The slot mixin runs on both sides
  * and captures {@code () -> PocketHoverState.isRevealed(n, d)} as the reveal
  * predicate. MenuKit only evaluates it on the client (the server keeps slots
- * visible so content syncs), but the lambda is constructed on the server too —
- * so this class must not drag in client types. It's a plain bag of flags the
- * client render mixin updates each frame; the per-world counts are pushed in
- * from the client-side {@link PocketState}.
+ * visible so their contents sync), but the lambda is built on the server too,
+ * so this class must not pull in client types. It is a plain set of flags the
+ * client updates each frame; the per-world counts are pushed in from the
+ * client-side {@link PocketState}.
  *
  * <h3>Reveal model</h3>
  *
- * One hotbar slot's pocket column is revealed at a time (the hovered one,
- * with hysteresis). A pocket (hotbar, depth) is revealed iff that hotbar slot
- * is the revealed one AND the player's configured count for it exceeds depth.
+ * One hotbar slot's pocket column shows at a time (the hovered one, with
+ * hysteresis). A pocket (hotbar, depth) shows only if that hotbar slot is the
+ * revealed one and the player's configured count for it is greater than depth.
  */
 public final class PocketHoverState {
 
@@ -28,10 +28,10 @@ public final class PocketHoverState {
     private static volatile int hoveredHotbar = -1;
     /** Pocket depth under the cursor within the revealed column, or -1. */
     private static volatile int hoveredDepth = -1;
-    /** Client-pushed per-hotbar-slot pocket counts (0–3). */
+    /** Per-hotbar-slot pocket counts (0 to 3), pushed by the client. */
     private static final int[] counts = new int[Pockets.HOTBAR_SLOTS];
 
-    /** True if pocket (hotbar, depth) should be visible + interactive now. */
+    /** True if pocket (hotbar, depth) should be visible and interactive now. */
     public static boolean isRevealed(int hotbar, int depth) {
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return false;
         return revealedHotbar == hotbar && counts[hotbar] > depth;
@@ -51,7 +51,7 @@ public final class PocketHoverState {
         return counts[hotbar];
     }
 
-    /** Client pushes the live per-world count for a hotbar slot. */
+    /** The client pushes the live per-world count for a hotbar slot. */
     public static void setCount(int hotbar, int count) {
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
         counts[hotbar] = count;

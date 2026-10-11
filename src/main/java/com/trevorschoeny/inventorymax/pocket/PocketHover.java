@@ -7,23 +7,21 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
 /**
- * Per-frame hover computation for pockets (client). Decides which hotbar
- * slot's pocket column is revealed.
+ * Per-frame hover tracking for pockets (client). Decides which hotbar slot's
+ * pocket column is shown.
  *
- * <p><b>Reveal on hover, no keybind</b> (Trev 2026-06-02): hovering any hotbar
- * slot reveals its two panels — the pockets above (however many are attached)
- * and the +/− strip below (always, even at 0 pockets, so + can attach the
- * first). A single sustain zone spans the +/− strip (below), the hotbar slot,
- * and the pockets (above), so the cursor can travel the whole stack without it
- * collapsing.
+ * <p><b>Shown on hover, no keybind.</b> Hovering any hotbar slot shows its two
+ * panels: the pockets above (however many are attached) and the plus and minus
+ * strip below (always, even with 0 pockets, so plus can add the first). One
+ * hover zone covers the strip below, the hotbar slot and the pockets above, so
+ * the cursor can move over the whole stack without it closing.
  *
- * <p><b>Driven by {@code ScreenEvents.beforeExtract}</b> — the per-frame seam
- * that replaced the deleted presence layer's {@code onPrepare}: state updates
- * once per frame before the pixel panels resolve their origins (which read it).
- * All geometry is absolute screen pixels off the live hotbar slots
- * ({@link PocketGeometry}), so the same math is correct on survival and the
- * creative inventory tab. Screens whose menu doesn't carry the pockets (chests,
- * creative's non-inventory tabs — which do surface a hotbar) clear the state.
+ * <p><b>Driven by {@code ScreenEvents.beforeExtract}</b>, which runs once per
+ * frame before the pixel panels resolve their origins (which read this state).
+ * All geometry is absolute screen pixels taken from the live hotbar slots
+ * ({@link PocketGeometry}), so the same math works on survival and the creative
+ * inventory tab. Screens whose menu doesn't have the pockets (chests, and
+ * creative's other tabs, which do show a hotbar) clear the state.
  */
 public final class PocketHover {
 
@@ -55,8 +53,9 @@ public final class PocketHover {
         int hovered = columnUnderCursor(screen, mouseX, mouseY);
         PocketHoverState.setHoveredHotbar(hovered);
 
-        // Reveal on ANY hotbar hover (even 0 pockets — the +/− strip still
-        // shows so + can attach). Sustain across the whole zone otherwise.
+        // Show on any hotbar hover, even with 0 pockets (the plus and minus
+        // strip still shows, so plus can add one). Otherwise stay open while
+        // the cursor is anywhere in the zone.
         int currently = PocketHoverState.revealedHotbar();
         int newReveal = -1;
         if (hovered >= 0) {
@@ -84,12 +83,10 @@ public final class PocketHover {
         PocketHoverState.setHoveredDepth(hoveredDepth);
     }
 
-    /**
-     * The hotbar column the cursor is over — counting both the hotbar slot
-     * itself AND the +/− strip below it, so hovering the strip reveals the
-     * column too (Trev 2026-06-02). Geometry is resolved off the live hotbar
-     * slots, so it works on whatever screen the tick fired on.
-     */
+    // The hotbar column the cursor is over, counting both the hotbar slot and
+    // the plus and minus strip below it, so hovering the strip shows the column
+    // too. Geometry comes from the live hotbar slots, so it works on whatever
+    // screen the tick fired on.
     private static int columnUnderCursor(AbstractContainerScreen<?> screen,
                                          double mx, double my) {
         for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
@@ -97,7 +94,7 @@ public final class PocketHover {
             if (r == null) continue;
             // The hotbar slot itself.
             if (inBox(mx, my, r.frameX(), r.y(), 16, 16)) return n;
-            // The +/− strip area just below it.
+            // The plus and minus strip just below it.
             if (inBox(mx, my, r.frameX() - 1, PocketGeometry.buttonsTop(r),
                     18, PocketGeometry.BUTTON_PANEL_H)) {
                 return n;
@@ -106,13 +103,11 @@ public final class PocketHover {
         return -1;
     }
 
-    /**
-     * The zone that keeps a revealed column open: spans the floating horizontal
-     * pocket row (above), the hotbar slot, and the +/− strip (below), so the
-     * cursor can travel the whole stack without it collapsing. Horizontal extent
-     * follows the row's width (it widens with the pocket count); at 0 pockets it
-     * falls back to the hotbar slot column so the +/− reveal still sustains.
-     */
+    // The zone that keeps a shown column open: the floating pocket row above,
+    // the hotbar slot, and the plus and minus strip below, so the cursor can
+    // move over the whole stack without it closing. Its width follows the row
+    // (which widens with the pocket count); with 0 pockets it is the hotbar
+    // slot's column, so the strip alone still stays open.
     private static boolean inSustainZone(AbstractContainerScreen<?> screen,
                                          double mx, double my, int hotbar) {
         SlotScreenRect r = PocketGeometry.hotbar(screen, hotbar);

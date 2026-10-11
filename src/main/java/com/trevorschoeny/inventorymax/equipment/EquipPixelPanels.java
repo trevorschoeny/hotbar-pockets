@@ -24,30 +24,31 @@ import net.minecraft.world.inventory.Slot;
 import java.util.List;
 
 /**
- * The equipment slots' presentation — one pixel-positioned panel <b>per slot</b>
- * (elytra, totem), each hosting its {@link SlotElement} + empty-slot placeholder
- * icon, anchored via the §0057-Revision pixel override (Trev's call, 2026-07-01).
+ * How the equipment slots are shown: one pixel-positioned panel per slot
+ * (elytra, totem), each holding its {@link SlotElement} and empty-slot
+ * placeholder icon, placed with MenuKit's pixel position override.
  *
- * <h3>Per-screen anchors (why two panels, not one)</h3>
+ * <h3>Why two panels, not one</h3>
  *
- * The two screens want different arrangements, so each slot anchors to its own
- * vanilla neighbor and the pair's shape falls out:
+ * The two screens need different arrangements, so each slot anchors to its own
+ * vanilla neighbor and the pair's shape follows from that:
  * <ul>
- *   <li><b>Survival inventory:</b> a vertical stack directly above the offhand —
- *       elytra two slot-pitches up, totem one (totem on top of the offhand).</li>
+ *   <li><b>Survival inventory:</b> a vertical stack directly above the offhand,
+ *       elytra two slot pitches up and totem one (totem right on top of the
+ *       offhand).</li>
  *   <li><b>Creative inventory tab:</b> vanilla shows no offhand there (its
- *       wrapper sits meaninglessly under the tab strip), so the pair sits beside
- *       the leggings/boots column instead — one column right with a 1px gap
- *       (matching the offhand's own 1px gap), the contiguous pair centered on
- *       the column's vertical midpoint (Trev, 2026-07-01). Anchoring to the
- *       real leggings/boots wrappers (not hardcoded pixels) keeps the pair
- *       tracking creative's column if its layout ever moves.</li>
+ *       wrapper sits uselessly under the tab strip), so the pair sits beside the
+ *       leggings and boots column instead: one column to the right with a 1px
+ *       gap (like the offhand's own 1px gap), the pair centered on the column's
+ *       vertical midpoint. Anchoring to the real leggings and boots wrappers,
+ *       not hardcoded pixels, keeps the pair in place if creative's layout
+ *       ever moves.</li>
  * </ul>
  *
- * A {@code null} origin (anchor slot not on this screen — chests, creative's
- * non-inventory tabs) skips the panel entirely. {@link VanillaSlotResolver}
+ * A {@code null} origin (the anchor slot is not on this screen, as in chests or
+ * creative's other tabs) skips the panel entirely. {@link VanillaSlotResolver}
  * returns absolute positions and unwraps creative's {@code SlotWrapper}, so
- * both branches are one expression each, no per-screen mixins.
+ * each branch is one expression, with no per-screen mixins.
  */
 public final class EquipPixelPanels {
 
@@ -61,7 +62,7 @@ public final class EquipPixelPanels {
     private static final int BOOTS_INDEX = 36;
     private static final int LEGGINGS_INDEX = 37;
 
-    /** Register both equip presentation panels. Call once at IM client init. */
+    /** Registers both panels. Call once at IM client init. */
     public static void register() {
         present(EquipmentSlots.ELYTRA_GROUP, ELYTRA_ABOVE_OFFHAND, /*pairIndex*/ 0);
         present(EquipmentSlots.TOTEM_GROUP, TOTEM_ABOVE_OFFHAND, /*pairIndex*/ 1);
@@ -71,8 +72,8 @@ public final class EquipPixelPanels {
         String dataPanel = EquipmentSlots.MOD_ID + ":" + group;
         Panel panel = Panel.builder(dataPanel + ":present")
                 .elements(List.of(
-                        // Slot first, icon after — the icon draws over an empty
-                        // slot's frame (the old foreground z-order).
+                        // Slot first, icon after, so the icon draws over an
+                        // empty slot's frame.
                         SlotElement.builder().slot(CreatedSlots.groupId(dataPanel, group), 0).build(),
                         new EmptyIcon(group)))
                 .visible(true)
@@ -87,14 +88,12 @@ public final class EquipPixelPanels {
         new ScreenPanelAdapter(panel, 0).onPlayerInventory();
     }
 
-    /**
-     * Per-frame outer origin for one equip slot. Creative inventory tab: one
-     * column right of the leggings/boots pair with a 1px gap (matching the
-     * offhand slot's own 1px gap), the contiguous 2-slot pair centered on the
-     * column's vertical midpoint — {@code pairIndex} 0 = top (elytra), 1 =
-     * bottom (totem). Everywhere else: the offhand stack position. Null (skip)
-     * when no container screen is up or the anchor slots aren't on it.
-     */
+    // Per-frame outer origin for one equipment slot. On the creative inventory
+    // tab: one column right of the leggings and boots with a 1px gap (like the
+    // offhand slot's 1px gap), the 2-slot pair centered on the column's
+    // vertical midpoint, pairIndex 0 on top (elytra) and 1 below (totem).
+    // Everywhere else: the stack above the offhand. Null (skip) when no
+    // container screen is open or the anchor slots aren't on it.
     private static ScreenOrigin anchor(int slotsAboveOffhand, int pairIndex) {
         // pairIndex 0 is the elytra slot, 1 the totem; each hides on its own switch.
         if (!(pairIndex == 0 ? IMConfig.elytraSlotOn() : IMConfig.totemSlotOn())) return null;
@@ -105,9 +104,9 @@ public final class EquipPixelPanels {
             var leggings = VanillaSlotResolver.resolve(screen, LEGGINGS_INDEX).orElse(null);
             var boots = VanillaSlotResolver.resolve(screen, BOOTS_INDEX).orElse(null);
             if (leggings == null || boots == null) return null;
-            // 1px gap to the column, like the offhand's; pair top = column
-            // midpoint minus one pitch, so the 36px pair straddles the middle
-            // of the (possibly gapped) leggings→boots span.
+            // 1px gap to the column, like the offhand's. The pair's top is the
+            // column midpoint minus one pitch, so the 36px pair straddles the
+            // middle of the leggings to boots span, which may have a gap.
             int x = leggings.frameX() + CreatedSlots.SLOT_PITCH + 1;
             int columnTop = leggings.frameY();
             int columnBottom = boots.frameY() + CreatedSlots.SLOT_PITCH;
@@ -121,9 +120,9 @@ public final class EquipPixelPanels {
     }
 
     /**
-     * Faint empty-slot placeholder over one equip slot (the library's
-     * {@link SlotElement} draws the frame + item; this draws the ghost icon
-     * only while the slot is empty). Render-only — never consumes clicks.
+     * Faint placeholder over one equipment slot while it is empty. The
+     * {@link SlotElement} draws the frame and item. Render-only, never consumes
+     * clicks.
      */
     private static final class EmptyIcon implements PanelElement {
 
@@ -149,12 +148,10 @@ public final class EquipPixelPanels {
                     ctx.originY() + SlotRendering.ITEM_INSET);
         }
 
-        /**
-         * The equip slot for {@code group} in this screen's <em>live</em> menu —
-         * direct on the survival inventory, unwrapped from the creative
-         * {@code SlotWrapper} on the creative inventory tab. Null when absent
-         * (the panel is skipped there anyway; this is belt-and-braces).
-         */
+        // The equipment slot for group in this screen's live menu: direct on
+        // the survival inventory, unwrapped from the creative SlotWrapper on
+        // the creative inventory tab. Null when absent (the panel is skipped
+        // there anyway, so this is only a safety check).
         private static CreatedSlot find(String group) {
             if (!(Minecraft.getInstance().gui.screen() instanceof AbstractContainerScreen<?> acs)) {
                 return null;

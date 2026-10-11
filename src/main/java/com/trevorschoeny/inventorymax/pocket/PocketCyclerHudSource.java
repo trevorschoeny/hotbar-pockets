@@ -14,31 +14,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pocket Cycler's contribution to the shared cycle HUD. Registered into IP's
+ * The pockets' source for the shared cycle HUD. Registered into IP's
  * {@link CycleHudRegistry} so the one Mini-hotbar HUD draws the pocket cycle
- * when the player is on a pocket-bearing hotbar slot — the HUD generalization
- * paying off (the same HUD serves Column and Pocket cyclers).
+ * when the player is on a hotbar slot with pockets. The same HUD serves both
+ * Column Cycler and the pockets.
  *
- * <h3>Reading content client-side</h3>
+ * <h3>Reading contents on the client</h3>
  *
  * The pocket items are read from the player's pocket attachment on the client.
- * Even in-world (where the client's pocket <i>slots</i> are inert/hidden), the
- * server's pocket slots are always active, so vanilla slot sync keeps the
- * client-side attachment populated — so reading the attachment directly gives
- * the live content regardless of reveal state.
+ * Even in the world (where the client's pocket <i>slots</i> are inert and
+ * hidden), the server's pocket slots are always active, so vanilla slot sync
+ * keeps the client-side attachment filled, and reading it directly gives the
+ * live contents whether or not the pockets are shown.
  *
- * <h3>Animation sync — client-side rotation prediction</h3>
+ * <h3>Animation sync: predicting the rotation on the client</h3>
  *
- * Pocket rotation is <b>server-authoritative</b>: {@link PocketInput} sends a
- * request and the rotated contents arrive a round-trip later. The shared HUD
- * animation, however, fires the instant you press the key. Without prediction
- * the animation would slide the OLD arrangement and the data would flip
- * mid-slide — a visible jump. (Column Cycler doesn't suffer this: its rotation
- * applies locally at once, so its view is already up to date when the animation
- * fires.) We mirror that here: {@link #predictRotation} stashes the
- * post-rotation view immediately, and {@link #cycleViewForHotbar} serves it
- * until the authoritative sync catches up — so the animation is always drawn
- * against the arrangement it's animating toward.
+ * The server does pocket rotation: {@link PocketInput} sends a request and the
+ * rotated contents arrive a round trip later. The shared HUD animation,
+ * however, starts the moment the key is pressed. Without prediction the
+ * animation would slide the old arrangement and the items would flip
+ * mid-slide, a visible jump. (Column Cycler doesn't have this problem: its
+ * rotation applies locally at once, so its view is already current when the
+ * animation starts.) This does the same: {@link #predictRotation} stores the
+ * rotated view immediately, and {@link #cycleViewForHotbar} returns it until
+ * the server's sync catches up, so the animation is always drawn against the
+ * arrangement it is moving toward.
  */
 public final class PocketCyclerHudSource implements CycleHudSource {
 
@@ -46,25 +46,25 @@ public final class PocketCyclerHudSource implements CycleHudSource {
 
     private PocketCyclerHudSource() {}
 
-    // ── Rotation prediction (client-side, presentation only) ──────────────
-    /** How long the predicted view is served — covers the rotation's round-trip. */
+    // Rotation prediction (client-side, display only).
+    /** How long the predicted view is used; covers the rotation's round trip. */
     private static final long PREDICTION_WINDOW_MILLIS = 500L;
     private static int predictedHotbar = -1;
     private static CycleView predictedView = null;
     private static long predictedExpiryMillis = 0L;
 
-    /** Register this source with the shared HUD registry. Call at client init. */
+    /** Call at client init. */
     public static void register() {
         InventoryPlusApi.registerHudSource(INSTANCE);
     }
 
     /**
-     * Stash the predicted post-rotation view for {@code hotbar} so the HUD
-     * animation is drawn against the arrangement it's sliding toward, not the
-     * stale pre-rotation one. Call the instant a rotation is requested (before
-     * the server confirms). The prediction applies the same ring rotation
-     * {@link PocketServerOps#rotate} does server-side, so it matches what syncs
-     * back; it's served for a short window, then the live view takes over.
+     * Stores the predicted rotated view for {@code hotbar} so the HUD animation
+     * is drawn against the arrangement it is sliding toward, not the old one.
+     * Call as soon as a rotation is requested, before the server confirms. The
+     * prediction applies the same ring rotation {@link PocketServerOps#rotate}
+     * does on the server, so it matches what syncs back; it is used for a short
+     * window, then the live view takes over.
      */
     public static void predictRotation(int hotbar, boolean forward) {
         CycleView current = computeRealView(hotbar);
@@ -86,7 +86,7 @@ public final class PocketCyclerHudSource implements CycleHudSource {
         if (!IMConfig.pocketCyclerEnabled()) return null;
         if (IMConfig.pocketHudMode() != PocketHudMode.MINI_HOTBAR) return null;
 
-        // Serve the predicted view while it's live, so the animation stays in
+        // Use the predicted view while it's live, so the animation stays in
         // sync with the drawn arrangement until the server's rotation syncs back.
         if (predictedView != null && predictedHotbar == hotbarSlot
                 && System.currentTimeMillis() < predictedExpiryMillis) {
@@ -98,13 +98,13 @@ public final class PocketCyclerHudSource implements CycleHudSource {
     /** The live (server-synced) pocket view for a hotbar slot, or null if none. */
     private static CycleView computeRealView(int hotbarSlot) {
         int count = PocketState.count(hotbarSlot);
-        if (count < 1) return null; // need ≥1 pocket + hotbar = 2 ring members
+        if (count < 1) return null; // a ring needs at least 1 pocket and the hotbar slot
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return null;
 
         Storage pockets = Pockets.POCKETS.bind(mc.player);
-        // Visual top→bottom: pocket(count-1) … pocket0, then the hotbar item.
+        // Top to bottom as drawn: pocket count-1 down to pocket 0, then the hotbar item.
         List<ItemStack> visual = new ArrayList<>(count + 1);
         for (int depth = count - 1; depth >= 0; depth--) {
             visual.add(pockets.getStack(Pockets.flatIndex(hotbarSlot, depth)));
@@ -114,9 +114,9 @@ public final class PocketCyclerHudSource implements CycleHudSource {
     }
 
     /**
-     * Pocket Cycler pins to the BOTTOM of the stacked HUD when it shares a
-     * hotbar slot with another cycler (Trev 2026-06-04) — the lowest stack
-     * order takes the bottom (nearest-the-hotbar) strip.
+     * The pockets go at the bottom of the stacked HUD when they share a hotbar
+     * slot with another cycler. The lowest stack order takes the bottom strip,
+     * nearest the hotbar.
      */
     @Override
     public int hudStackOrder() {
