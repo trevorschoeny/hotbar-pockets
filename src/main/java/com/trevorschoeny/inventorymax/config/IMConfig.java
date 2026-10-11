@@ -64,9 +64,11 @@ public final class IMConfig {
     private static boolean elytraSlotEnabled = true;
     private static boolean totemSlotEnabled = true;
     // The on/off switches in Inventory Plus's inventory column (Trev, 2026-10-04).
-    private static boolean pocketsShowButton = true;
-    private static boolean equipmentSlotsShowButton = true;
-    private static boolean mendAnywhereShowButton = true;
+    // Hidden by default (Trev, 2026-10-11 smoke: "too many buttons"); each
+    // feature's own default and keys are unchanged.
+    private static boolean pocketsShowButton = false;
+    private static boolean equipmentSlotsShowButton = false;
+    private static boolean mendAnywhereShowButton = false;
     // Container locks: the old master toggle is gone (Reach build stage 4).
     // Whether a player's container locks are also kept on the server is that
     // player's choice, Inventory Plus's "Also keep container locks on the
