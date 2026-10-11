@@ -7,6 +7,7 @@ import com.trevlar.menukit.api.window.TriBool;
 
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 
@@ -113,7 +114,7 @@ public final class PocketServerOps {
             // Vanilla add-to-inventory (leaves the remainder in `moving`).
             sp.getInventory().add(moving);
             if (!moving.isEmpty()) {
-                sp.drop(moving, false); // no room, drop the remainder
+                sp.drop(moving, false, Prediction.SERVER_ONLY); // no room, drop the remainder
             }
         }
         pockets.markDirty();

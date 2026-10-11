@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 
-import org.lwjgl.glfw.GLFW;
 
 /**
  * IM's keybinds, registered as vanilla {@link KeyMapping}s so they show in the
@@ -27,11 +26,11 @@ public final class IMKeybinds {
 
     public static final KeyMapping CYCLE_FORWARD = new KeyMapping(
             "key.inventorymax.pocket_cycle_forward",
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT, CATEGORY);
+            InputConstants.Type.KEYBOARD, InputConstants.KEY_RIGHT, CATEGORY);
 
     public static final KeyMapping CYCLE_BACKWARD = new KeyMapping(
             "key.inventorymax.pocket_cycle_backward",
-            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT, CATEGORY);
+            InputConstants.Type.KEYBOARD, InputConstants.KEY_LEFT, CATEGORY);
 
     public static void register() {
         KeyMappingHelper.registerKeyMapping(CYCLE_FORWARD);
