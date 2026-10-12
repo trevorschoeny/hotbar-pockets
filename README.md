@@ -4,13 +4,23 @@ Inventory Max adds the inventory features that need the server's help: slots for
 
 ## Features
 
+### Equipment Slots
+
 Equipment Slots give you a slot for an elytra and a slot for a totem, so you can keep both ready without giving up your chestplate or a hand. They work in survival and creative. What's in them survives death like vanilla equipment, respects Curse of Binding, and can mend from XP. You can turn the elytra slot and the totem slot off separately, and small icons beside the hotbar show what's in them.
+
+### Pockets
 
 Pockets are extra slots behind each hotbar slot, and the server keeps their items. Hover a hotbar slot to show its pockets, then cycle them in and out with the Left and Right arrows. They work in survival and creative, and Inventory Plus's Restock and Auto Tool Switch can take from them.
 
+### Mend Anywhere
+
 Mend Anywhere lets Mending repair items from XP anywhere in your inventory, not only in your hands and armor.
 
+### Shared container locks
+
 Shared container locks build on Inventory Plus's own. Without Inventory Max, Inventory Plus keeps your container locks on your computer, for you alone. With Inventory Max on the server and "Keep container locks on the server" turned on in Inventory Plus's Lock groups tab, the server keeps the container locks you place too. It enforces them for every player against shift-clicks, drags, drops and swaps, and they survive a shulker box being broken and placed again. The setting is off by default.
+
+### Settings
 
 Every feature has its own tab in Inventory Plus's settings menu, with its switch and settings, and Inventory Max's config button in Mod Menu opens them. Each feature also has an on and off switch in the column beside your inventory. Those switches start hidden, and each tab has a checkbox to show its switch.
 
