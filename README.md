@@ -18,7 +18,7 @@ Every feature has its own tab in Inventory Plus's settings menu, with its switch
 
 - [Inventory Plus](https://modrinth.com/mod/inventory-plus) 1.9.0 or newer
 - [Keybindery](https://modrinth.com/mod/keybindery) 1.1.0 or newer
-- [MenuKit](https://modrinth.com/mod/menukit) 6.1.0 or newer and [MenuKit: Containers](https://modrinth.com/mod/menukit-containers) 6.1.0 or newer, both below 7.0.0
+- [MenuKit](https://modrinth.com/mod/menukit) 6.2.0 or newer and [MenuKit: Containers](https://modrinth.com/mod/menukit-containers) 6.2.0 or newer, both below 7.0.0
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 
 ## Compatibility
