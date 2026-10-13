@@ -1,25 +1,24 @@
-// Inventory Max (IM), the server-side companion to Inventory Plus (IP).
-// Universal Fabric mod (environment "*"): the pocket graft runs on both sides,
-// because the grafted slots must exist on the server to hold and persist their
-// contents, and on the client to render and take input. Depends on IP (it adds
-// to IP's cycler and HUD registry) and on MenuKit: Containers (the slot-graft
-// kit). MenuKit itself arrives transitively through MKC's one-way `api` edge.
+// Hotbar Pockets. Up to three extra slots behind each hotbar slot, and two keys that
+// rotate a hotbar slot through them. Universal jar: the 27 pocket slots are held, saved
+// and rotated on the server, and shown, resized and cycled from the client. Built on
+// SlotKit (the slots) and MenuKit (the panels and the cycle strip HUD); Inventory Plus
+// is optional (Restock and Auto Tool Switch take from pockets, and its column switch).
+// Inventory Max's repo, renamed; 2.0.0 is the split (Beryl wave).
 //
-// Build: `./gradlew :inventory-max:build`. validator-mkc loads it into
-// `:validator-mkc:runClient` through a modLocalRuntime line.
+// Included from the root settings.gradle as `:hotbar-pockets`. Build with
+// `./gradlew :hotbar-pockets:build` from the workspace root.
 
 plugins {
-    // The Loom plugin id is namespaced from 1.15 on; 1.17 is the line for 26.2.
-    // The version is pinned at the workspace root.
+    // The Loom plugin id is namespaced from 1.15 on. The version is pinned at the workspace root.
     id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
     id 'java'
     id 'com.modrinth.minotaur' version '2.+'
 }
 
-version = property('inventorymax_version')
+version = property('hotbarpockets_version')
 group   = property('maven_group')
 
-base.archivesName = 'inventory-max'
+base.archivesName = 'hotbar-pockets'
 
 java {
     // Minecraft 26.x runs on Java 25.
@@ -29,83 +28,71 @@ java {
 
 repositories {
     maven { url 'https://maven.fabricmc.net/' }
-    maven { url 'https://maven.terraformersmc.com/releases/' }
-    // Not for this mod. Keybindery (a project dependency) depends on YACL,
-    // whose 26.2 builds are only on this Maven repository, so Gradle needs it
-    // to resolve Keybindery's runtime classpath. This mod neither compiles
-    // against YACL nor bundles it.
+    // Not for this mod. Inventory Plus (compile-only, below) depends on Keybindery,
+    // which depends on YACL, whose 26.x builds are only here.
     maven { url 'https://api.modrinth.com/maven' }
 }
 
-// Since 6.0.0 MenuKit has separate main and client source sets. A project
-// dependency sees only main, so its client half is added below by output,
-// which needs MenuKit evaluated first. A published jar holds both halves.
+// MenuKit, SlotKit and Inventory Plus have separate main and client source sets. A
+// project dependency sees only main, so their client halves are added by output, which
+// needs them evaluated first. A published jar holds both halves.
 evaluationDependsOn(':menukit')
-// MenuKit: Containers is split the same way since 6.0.0.
-evaluationDependsOn(':menukit-containers')
-// Inventory Plus is split the same way; its client half comes by output too.
+evaluationDependsOn(':slotkit')
 evaluationDependsOn(':inventory-plus')
-// Keybindery is universal the same way; its client half comes by output too.
-evaluationDependsOn(':keybindery')
 
 dependencies {
-    // 26.x: the game is unobfuscated, so there is no mappings line, and mod deps
-    // use the standard Java configurations (implementation, not modImplementation).
+    // 26.x is unobfuscated: no mappings line, and plain Java configurations.
     minecraft "com.mojang:minecraft:${property('minecraft_version')}"
     implementation "net.fabricmc:fabric-loader:${property('loader_version')}"
     implementation "net.fabricmc.fabric-api:fabric-api:${property('fabric_version')}"
 
-    // ModMenu shows IM's config screen from the mods list. Soft dependency.
-    // This is a beta, the only 26.2 build available.
-    compileOnly "com.terraformersmc:modmenu:21.0.0"
-    localRuntime "com.terraformersmc:modmenu:21.0.0"
-
-    // MenuKit: Containers is the slot-graft kit (MenuKitGraft, KeyedStorages,
-    // StorageAttachment, MKSlotState, MenuKitGraftRender, MenuKitSlot). MenuKit
-    // (HudRegion, MKHudPanel, Storage) comes transitively through MKC's one-way
-    // `api` edge, the same path validator-mkc uses. On 26.x these are plain
-    // project deps, since the `namedElements` variant went away with remapping.
-    implementation project(':menukit-containers')
-    implementation rootProject.project(':menukit').sourceSets.client.output
-    implementation rootProject.project(':menukit-containers').sourceSets.client.output
-
-    // Inventory Plus: IM builds on IP's public cycler and HUD registry
-    // (HotbarCyclableRegistry, CycleHudRegistry, CycleView, HudMode) and
-    // reads IPConfig for cohabitation flags. The dependency is one-way, IM on IP.
-    implementation project(':inventory-plus')
-    implementation rootProject.project(':inventory-plus').sourceSets.client.output
-
-    // Keybindery is required: the settings menu binds keys with its MenuKit
-    // ChordButton, which gives the same chord capture and conflict view as
-    // Keybindery's own screens. It is universal, so a project dep sees only its
-    // empty common entrypoint, and the real (client) code comes by output, the
-    // same as MenuKit's and Inventory Plus's above.
-    implementation project(':keybindery')
-    implementation rootProject.project(':keybindery').sourceSets.client.output
+    implementation project(':menukit')
+    implementation project(':slotkit')
 }
 
 loom {
+    // src/main holds what a server loads (the slots, their storage, the rotations);
+    // src/client holds the hover row, the keys, the cycle strip and the Inventory Plus
+    // integration. The compiler refuses a main class that reaches a client one.
+    splitEnvironmentSourceSets()
+    mods {
+        hotbarpockets {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
     runs {
         client { ideConfigGenerated = false }
+        server { ideConfigGenerated = false }
         // Test Gallery: boots straight into the generated test world in run/saves/TestGallery.
-        // Generate it with `test-gallery/run-scene.sh <mod> <scene>` (which also runs this).
+        // Generate it with `test-gallery/run-scene.sh hotbar-pockets <scene>` (which also runs this).
         testGallery {
             inherit client
             name 'Test Gallery'
             programArgs '--quickPlaySingleplayer', 'TestGallery'
             ideConfigGenerated = false
         }
-        server { ideConfigGenerated = false }
     }
+}
+
+// Client-only dependencies, after loom {} so its client configurations exist.
+dependencies {
+    clientImplementation rootProject.project(':menukit').sourceSets.client.output
+    clientImplementation rootProject.project(':slotkit').sourceSets.client.output
+
+    // Inventory Plus is optional ("suggests"). Its API is compiled against and never
+    // bundled; only the `ip` package touches it, and only when IP is loaded.
+    clientCompileOnly project(':inventory-plus')
+    clientCompileOnly rootProject.project(':inventory-plus').sourceSets.client.output
 }
 
 jar {
     from('LICENSE') { rename { "${it}_${project.name}" } }
 }
 
-// Stamp the real project version into fabric.mod.json at build time. The manifest
-// declares "version": "${version}", because a hardcoded manifest version silently
-// breaks every dependency gate against this mod (this has happened once already).
+// Stamp the real project version into fabric.mod.json at build. The manifest
+// declares "version": "${version}", because a hardcoded manifest version
+// silently breaks every dependency gate against this mod.
 processResources {
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
@@ -114,33 +101,32 @@ processResources {
 }
 
 // ── Modrinth Publishing ────────────────────────────────────────────────
-// Inventory Max — Modrinth project id ETvEZKh9 (slug inventory-max).
-// Lead @ Trevlar Mods owns the publish (§0032).
+// Inventory Max's project (ETvEZKh9), renamed to Hotbar Pockets at publish; it keeps its
+// downloads and followers. Lead @ Trevlar Mods owns the publish.
 modrinth {
     token = System.getenv("MODRINTH_TOKEN")
     projectId = "ETvEZKh9"
-    versionNumber = property('inventorymax_version')
-    versionName = "Inventory Max ${property('inventorymax_version')}"
+    versionNumber = property('hotbarpockets_version')
+    versionName = "Hotbar Pockets ${property('hotbarpockets_version')}"
     versionType = "release"
     // ci-cd.md stage 5: the player-facing changelog lives in changelog.md, one entry,
-    // overwritten each release (git keeps the history). Hardcoding it here went stale.
+    // overwritten each release (git keeps the history).
     changelog = file('changelog.md').text
     // ci-cd.md stage 7: the README is the public description; `modrinthSyncBody` pushes it.
     syncBodyFrom = file('README.md').text
-    // 26.x: no remap step — `jar` IS the shippable artifact (remapJar is gone).
+    // 26.x: no remap step, `jar` IS the shippable artifact.
     uploadFile = jar
     gameVersions = [property('minecraft_version')]
     loaders = ["fabric"]
     dependencies {
         required.project "fabric-api"
         required.project "menukit"
-        required.project "menukit-containers"
-        required.project "inventory-plus"
-        required.project "keybindery"
+        required.project "slotkit"
+        optional.project "inventory-plus"
     }
 }
 
-// The shipped jar must report the bumped version itself. A jar that
+// The shipped jar must self-report the bumped version. A jar that
 // says the wrong version silently breaks every dependency gate against it, so this
 // fails the build instead of relying on someone remembering to unzip and look.
 tasks.register('verifyJarVersion') {
@@ -157,44 +143,53 @@ tasks.register('verifyJarVersion') {
 }
 build.dependsOn verifyJarVersion
 
-// This mod must pin MenuKit to the major it was built against.
-// The floor guarantees every MenuKit call it makes exists at load time; the ceiling stops a
+// This mod must pin each Kit to the major it was built against.
+// The floor guarantees every Kit call it makes exists at load time; the ceiling stops a
 // future breaking major from loading against code that never saw it. Both halves matter:
-// a floor alone lets MenuKit 6.0.0 rename an API out from under a shipped jar, and the
+// a floor alone lets a new major rename an API out from under a shipped jar, and the
 // player gets a NoSuchMethodError hours into a session instead of a refusal at launch.
 // Commas are rejected outright: Fabric parses ">=5.0.0,<6.0.0" without complaint and the
 // resulting predicate then matches NO version at all, which silently disables the mod.
-tasks.register('verifyMenuKitRange') {
+tasks.register('verifyKitRanges') {
     def src = file('src/main/resources/fabric.mod.json')
-    def mkVersion = (project.findProperty('menukit_version') ?: '').toString()
+    // Each Kit id in `depends`, checked against its own version property. MenuKit and
+    // SlotKit each keep their own version; neither re-versions the other.
+    def kits = [menukit: 'menukit_version', slotkit: 'slotkit_version']
+    def versions = kits.collectEntries { id, prop -> [(id): (project.findProperty(prop) ?: '').toString()] }
     inputs.file src
-    inputs.property 'menukit_version', mkVersion
+    inputs.property 'kit_versions', versions
     doLast {
-        // Floor at major.minor, not just major: a minor can add API (MenuKit 5.1.0 added
-        // SlotOperations/SlotGroups) that a consumer built against it calls. Flooring at the
-        // major alone would let that jar load on the unrelated 5.0.0 and die with
-        // NoSuchMethodError, which is exactly the failure this check exists to prevent.
-        def parts = mkVersion.replaceAll(/\+.*$/, '').tokenize('.')
-        def major = Integer.parseInt(parts[0])
-        def minor = Integer.parseInt(parts[1])
-        def expected = ">=${major}.${minor}.0 <${major + 1}.0.0".toString()
         def depends = new groovy.json.JsonSlurper().parse(src).depends ?: [:]
-        ['menukit', 'menukit-containers'].each { id ->
+        if (depends['menukit-containers'] != null) {
+            throw new GradleException(
+                "fabric.mod.json: depends on 'menukit-containers'. Containers is SlotKit now: " +
+                "depend on 'slotkit' instead (Amethyst spec 4.1).")
+        }
+        kits.each { id, prop ->
             def declared = depends[id]?.toString()
             if (declared == null) return
+            def version = versions[id]
+            if (!version) throw new GradleException("verifyKitRanges: '${id}' is declared but ${prop} is not set")
             if (declared.contains(',')) {
                 throw new GradleException(
                     "fabric.mod.json: '${id}' is '${declared}'. Fabric accepts a comma here and the " +
                     "predicate then matches no version at all. Separate the bounds with a space.")
             }
+            // Floor at major.minor, not just major: a minor can add API that a consumer
+            // built against it calls, and flooring at the major alone would let that jar
+            // load on an older minor and die with NoSuchMethodError.
+            def parts = version.replaceAll(/\+.*$/, '').tokenize('.')
+            def major = Integer.parseInt(parts[0])
+            def minor = Integer.parseInt(parts[1])
+            def expected = ">=${major}.${minor}.0 <${major + 1}.0.0".toString()
             if (declared != expected) {
                 throw new GradleException(
                     "fabric.mod.json: '${id}' is '${declared}', expected '${expected}'. This mod is " +
-                    "built against MenuKit ${mkVersion}, so it floors at that major.minor and stops " +
+                    "built against ${id} ${version}, so it floors at that major.minor and stops " +
                     "below the next major. See guidelines/ci-cd.md, 'MenuKit version pinning'.")
             }
+            println "verifyKitRanges: ${id} '${expected}' (built against ${version})"
         }
-        println "verifyMenuKitRange: menukit '${expected}' (built against ${mkVersion})"
     }
 }
-build.dependsOn verifyMenuKitRange
+build.dependsOn verifyKitRanges

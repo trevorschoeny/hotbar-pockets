@@ -1,0 +1,9 @@
+{
+  "key.category.hotbarpockets.controls": "Hotbar Pockets",
+  "key.hotbarpockets.cycle_forward": "Pocket Cycle Forward",
+  "key.hotbarpockets.cycle_backward": "Pocket Cycle Backward",
+
+  "slot_operation.hotbarpockets.pocket_cycle": "Pocket Cycler",
+  "slot_operation.hotbarpockets.pocket_cycle.description": "Pocket Cycler may rotate items through this slot.",
+  "slot_group_set.hotbarpockets.pockets": "Pockets"
+}

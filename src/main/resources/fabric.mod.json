@@ -1,35 +1,45 @@
 {
   "schemaVersion": 1,
-  "id": "inventorymax",
+  "id": "hotbarpockets",
   "version": "${version}",
-  "name": "Inventory Max",
-  "description": "Server-side companion to Inventory Plus: container locks, elytra + totem equipment slots, and persistent pocket slots.",
+  "name": "Hotbar Pockets",
+  "description": "Up to three extra slots behind each hotbar slot, and a key that rotates them into your hand. Goes with Inventory Plus.",
   "authors": [
     "trevorschoeny"
   ],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/hotbar-pockets",
+    "sources": "https://github.com/trevorschoeny/hotbar-pockets"
+  },
   "license": "MIT",
   "environment": "*",
-  "mixins": [
-    "inventorymax.mixins.json"
-  ],
   "entrypoints": {
     "main": [
-      "com.trevorschoeny.inventorymax.InventoryMax"
+      "com.trevorschoeny.hotbarpockets.HotbarPockets"
     ],
     "client": [
-      "com.trevorschoeny.inventorymax.InventoryMaxClient"
-    ],
-    "modmenu": [
-      "com.trevorschoeny.inventorymax.config.IMConfigModMenu"
+      "com.trevorschoeny.hotbarpockets.HotbarPocketsClient"
     ]
   },
   "depends": {
     "fabricloader": ">=0.15.0",
     "fabric-api": "*",
     "minecraft": "~26.3",
-    "menukit": ">=6.2.0 <7.0.0",
-    "menukit-containers": ">=6.2.0 <7.0.0",
-    "inventoryplus": ">=1.9.0",
-    "keybindery": ">=1.1.0"
+    "menukit": ">=7.1.0 <8.0.0",
+    "slotkit": ">=1.1.0 <2.0.0"
+  },
+  "suggests": {
+    "inventoryplus": "*"
+  },
+  "breaks": {
+    "inventoryplus": "<2.0.0"
+  },
+  "custom": {
+    "slotkit": {
+      "bothSides": "required"
+    },
+    "configkit": {
+      "suite": "inventoryplus"
+    }
   }
 }
