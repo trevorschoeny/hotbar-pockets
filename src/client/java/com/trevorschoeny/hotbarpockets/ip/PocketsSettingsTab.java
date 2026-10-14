@@ -48,12 +48,8 @@ final class PocketsSettingsTab {
 
     private PocketsSettingsTab() {}
 
-    /**
-     * Inventory Plus's settings menu, by its name. IP documents this name for other
-     * mods' {@code Tabs.addTo}; it's an id, not a class, so naming it reaches no IP
-     * internal.
-     */
-    private static final Identifier MENU = Identifier.fromNamespaceAndPath("inventoryplus", "settings");
+    /** Inventory Plus's settings menu, exposed as an API constant. */
+    private static final Identifier MENU = InventoryPlusApi.SETTINGS_MENU;
 
     /** The tab's id: IP's column switch opens it on Ctrl-click, and so do + and -. */
     static final String TAB_ID = HotbarPockets.MOD_ID;
