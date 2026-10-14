@@ -3,6 +3,7 @@
   "id": "hotbarpockets",
   "version": "${version}",
   "name": "Hotbar Pockets",
+  "icon": "assets/hotbarpockets/icon.png",
   "description": "Up to three extra slots behind each hotbar slot, and a key that rotates them into your hand. Goes with Inventory Plus.",
   "authors": [
     "trevorschoeny"
