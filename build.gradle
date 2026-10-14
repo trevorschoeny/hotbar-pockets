@@ -3,7 +3,7 @@
 // and rotated on the server, and shown, resized and cycled from the client. Built on
 // SlotKit (the slots) and MenuKit (the panels and the cycle strip HUD); Inventory Plus
 // is optional (Restock and Auto Tool Switch take from pockets, and its column switch).
-// Inventory Max's repo, renamed; 2.0.0 is the split (Beryl wave).
+// Inventory Max's repo, renamed; 2.0.0 is the split.
 //
 // Included from the root settings.gradle as `:hotbar-pockets`. Build with
 // `./gradlew :hotbar-pockets:build` from the workspace root.

@@ -34,7 +34,7 @@ import java.util.TreeMap;
  * <p>Pushes counts into the server-safe {@link PocketHoverState} for the slots' reveal
  * predicates.
  */
-// ponytail: a small file of our own until ConfigKit 1.0; this moves to ConfigKit's
+// A small file of our own until ConfigKit 1.0. Then this moves to ConfigKit's
 // WorldStore, cleared by its "Reset everything" (onResetAll), with no change for callers.
 public final class PocketState {
 

@@ -19,8 +19,7 @@ import net.minecraft.world.item.ItemStack;
  * SlotKit deliberately has no advancement API. So this fires the trigger
  * itself: on a <b>server-side</b> write of a non-empty stack, it calls
  * {@link CriteriaTriggers#INVENTORY_CHANGED} for the owning player, which gives
- * pockets the same advancement behavior as normal
- * inventory slots.
+ * pockets the same advancement behavior as normal inventory slots.
  */
 public final class SliceStorage implements Storage {
 

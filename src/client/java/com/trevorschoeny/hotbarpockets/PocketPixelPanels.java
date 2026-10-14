@@ -107,7 +107,7 @@ public final class PocketPixelPanels {
      * the click and does nothing. The panel only calls {@link #mouseClicked} for hits
      * inside the button.
      */
-    // ponytail: Ctrl-click opened Inventory Max's settings tab; it comes back as
+    // Ctrl-click used to open Inventory Max's settings tab; it comes back as
     // ConfigKit.open("hotbarpockets") once ConfigKit 1.0 lands.
     private static final class ResizeButton implements PanelElement {
 

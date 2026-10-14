@@ -9,7 +9,7 @@ import net.minecraft.resources.Identifier;
 /**
  * Client-to-server request to quick-move one pocket's contents to wherever a
  * shift-click would send them. This is the restock path for slots the player
- * isn't holding (a totem refilling the equipment totem slot, a new armor piece
+ * isn't holding (a totem refilling Simple Totem Slot's slot, a new armor piece
  * equipping after one breaks).
  *
  * <h3>Why the server does it</h3>
@@ -19,8 +19,8 @@ import net.minecraft.resources.Identifier;
  * pocket slots are inert: they reject clicks and report empty. The server's
  * pocket slots are always active, so the server runs the real
  * {@code quickMoveStack} from the pocket slot and lets the existing routing
- * (vanilla for armor, SlotKit for a slot mod's totem or elytra slot) move the item to the right place, then {@code broadcastChanges}
- * syncs it back.
+ * (vanilla for armor, SlotKit for a slot mod's totem or elytra slot) move the item
+ * to the right place, then {@code broadcastChanges} syncs it back.
  *
  * <p>Restocking a held tool does <b>not</b> use this; it rotates the item into
  * the hand through {@code PocketCyclable.bringToHotbar}. This is only for slots

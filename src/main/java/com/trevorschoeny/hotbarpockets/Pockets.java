@@ -115,7 +115,7 @@ public final class Pockets {
                                 // Read only on the client: shown while this column is the
                                 // hovered one and its count reaches this depth.
                                 .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
-                                // Pockets take no part in vanilla's bulk moves (decision 6):
+                                // Pockets take no part in vanilla's bulk moves:
                                 // a double-click, a chest's shift-click routing or a drag
                                 // never pulls from or pours into one. Shift-click out stays,
                                 // so a pocket can still be emptied quickly.
