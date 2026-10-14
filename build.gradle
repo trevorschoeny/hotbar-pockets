@@ -28,8 +28,8 @@ java {
 
 repositories {
     maven { url 'https://maven.fabricmc.net/' }
-    // Not for this mod. Inventory Plus (compile-only, below) depends on Keybindery,
-    // which depends on YACL, whose 26.x builds are only here.
+    // Not for this mod. Inventory Plus and Keybindery (compile-only, below) need YACL,
+    // whose 26.x builds are only here.
     maven { url 'https://api.modrinth.com/maven' }
 }
 
@@ -39,6 +39,7 @@ repositories {
 evaluationDependsOn(':menukit')
 evaluationDependsOn(':slotkit')
 evaluationDependsOn(':inventory-plus')
+evaluationDependsOn(':keybindery')
 
 dependencies {
     // 26.x is unobfuscated: no mappings line, and plain Java configurations.
@@ -84,6 +85,11 @@ dependencies {
     // bundled; only the `ip` package touches it, and only when IP is loaded.
     clientCompileOnly project(':inventory-plus')
     clientCompileOnly rootProject.project(':inventory-plus').sourceSets.client.output
+    // Keybindery's key button, for the cycle keys on the Pockets tab in IP's settings
+    // menu. Also compile-only: IP requires Keybindery, so it is present whenever the
+    // `ip` package loads, and never otherwise.
+    clientCompileOnly project(':keybindery')
+    clientCompileOnly rootProject.project(':keybindery').sourceSets.client.output
 }
 
 jar {

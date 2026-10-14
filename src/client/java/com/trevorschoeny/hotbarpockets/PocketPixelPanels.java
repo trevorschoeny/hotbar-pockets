@@ -1,5 +1,6 @@
 package com.trevorschoeny.hotbarpockets;
 
+import com.trevlar.menukit.api.element.Click;
 import com.trevlar.menukit.api.element.InputContext;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.RenderContext;
@@ -13,6 +14,7 @@ import com.trevlar.slotkit.api.group.SlotScreenRect;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
  * The chrome around the shown pockets, on MenuKit pixel panels. The pocket slots
@@ -30,6 +32,13 @@ import java.util.List;
 public final class PocketPixelPanels {
 
     private PocketPixelPanels() {}
+
+    /**
+     * Opens the Pockets settings and answers true, or answers false when there are no
+     * settings to open. Only Inventory Plus has a settings menu, so the {@code ip}
+     * package sets this; without IP a Ctrl-click on + or - is a plain click.
+     */
+    public static volatile BooleanSupplier openSettings = () -> false;
 
     /** Registers both panels. Call once at client init. */
     public static void register() {
@@ -105,10 +114,9 @@ public final class PocketPixelPanels {
      * One boxed resize button (minus or plus): a bordered box with a bar or a cross,
      * greyed at its limit (minus at 0 pockets, plus at 3). A greyed button still takes
      * the click and does nothing. The panel only calls {@link #mouseClicked} for hits
-     * inside the button.
+     * inside the button. Ctrl-click (Cmd on a Mac) opens the Pockets settings instead,
+     * when there are any ({@link #openSettings}), as Inventory Max's buttons did.
      */
-    // Ctrl-click used to open Inventory Max's settings tab; it comes back as
-    // ConfigKit.open("hotbarpockets") once ConfigKit 1.0 lands.
     private static final class ResizeButton implements PanelElement {
 
         private final boolean plus;
@@ -151,6 +159,7 @@ public final class PocketPixelPanels {
 
         @Override
         public boolean mouseClicked(InputContext in, int button) {
+            if (Click.of(button).ctrl() && openSettings.getAsBoolean()) return true;
             int rev = PocketHoverState.revealedHotbar();
             if (rev < 0) return false;
             if (plus) PocketState.grow(rev);

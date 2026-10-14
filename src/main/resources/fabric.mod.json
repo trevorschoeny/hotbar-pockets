@@ -37,9 +37,6 @@
   "custom": {
     "slotkit": {
       "bothSides": "required"
-    },
-    "configkit": {
-      "suite": "inventoryplus"
     }
   }
 }

@@ -34,8 +34,7 @@ import java.util.TreeMap;
  * <p>Pushes counts into the server-safe {@link PocketHoverState} for the slots' reveal
  * predicates.
  */
-// A small file of our own until ConfigKit 1.0. Then this moves to ConfigKit's
-// WorldStore, cleared by its "Reset everything" (onResetAll), with no change for callers.
+// This mod's own file, beside its settings (config/hotbarpockets/config.json).
 public final class PocketState {
 
     private PocketState() {}
