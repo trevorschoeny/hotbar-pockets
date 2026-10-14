@@ -26,6 +26,8 @@ public final class HotbarPockets implements ModInitializer {
         // The storage and the 27 panels, on both sides, before any menu is built.
         Pockets.register();
         PocketOperations.define();
+        // Inventory Max's saved pockets, elytra and totem, given back on join.
+        InventoryMaxRecovery.register();
 
         // Payload types are known on both sides, wherever the payload travels.
         PayloadTypeRegistry.serverboundPlay().register(PocketRotateC2S.TYPE, PocketRotateC2S.CODEC);

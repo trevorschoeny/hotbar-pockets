@@ -5,5 +5,8 @@
 
   "slot_operation.hotbarpockets.pocket_cycle": "Pocket Cycler",
   "slot_operation.hotbarpockets.pocket_cycle.description": "Pocket Cycler may rotate items through this slot.",
-  "slot_group_set.hotbarpockets.pockets": "Pockets"
+  "slot_group_set.hotbarpockets.pockets": "Pockets",
+
+  "hotbarpockets.inventorymax_returned": "Your Inventory Max items are back in your inventory.",
+  "hotbarpockets.inventorymax_returned_dropped": "Your Inventory Max items were returned. What didn't fit is at your feet."
 }
