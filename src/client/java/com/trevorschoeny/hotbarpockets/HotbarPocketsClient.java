@@ -19,9 +19,8 @@ public final class HotbarPocketsClient implements ClientModInitializer {
         PocketKeys.register();
         PocketsSettings.load();
         PocketState.load();
-        // The slots are SlotKit's, declared in common init; this gives their panels the
-        // per-frame screen position, then the hover tick that decides which column shows.
-        PocketGeometry.install();
+        // The slots are SlotKit's, declared in common init; the hover tick decides which
+        // column shows, and the panels present the shown pockets and their chrome.
         PocketHover.register();
         PocketPixelPanels.register();
         PocketInput.register();

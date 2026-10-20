@@ -7,9 +7,11 @@ import com.trevlar.menukit.api.element.RenderContext;
 import com.trevlar.menukit.api.panel.Panel;
 import com.trevlar.menukit.api.panel.PanelPosition;
 import com.trevlar.menukit.api.panel.PanelStyle;
+import com.trevlar.menukit.api.panel.ScreenMatcher;
 import com.trevlar.menukit.api.panel.ScreenOrigin;
 import com.trevlar.menukit.api.panel.ScreenPanelAdapter;
 import com.trevlar.slotkit.api.group.SlotScreenRect;
+import com.trevlar.slotkit.api.slot.SlotFlowElement;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -17,11 +19,15 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 
 /**
- * The chrome around the shown pockets, on MenuKit pixel panels. The pocket slots
- * themselves are SlotKit's ({@link Pockets}); these two panels follow the shown column:
+ * The shown pockets and their chrome, on MenuKit pixel panels. The pocket slots are
+ * SlotKit groups ({@link Pockets}); these panels follow the shown column:
  * <ul>
+ *   <li><b>The pockets</b>: one flush single-slot panel per (hotbar, depth), at its place
+ *       in the floating row ({@link PocketGeometry#pocketOrigin}), or skipped when that
+ *       pocket isn't shown. Opaque, so the panel claims its 18x18 and a pocket wins over
+ *       the inventory slot it floats over.</li>
  *   <li><b>The backing box</b>: a raised box behind the row, sized to the shown count.
- *       It draws under the pocket panels ({@link Pockets#PANEL_PRIORITY} is one above
+ *       It draws under the pocket panels ({@link #POCKET_PRIORITY} is one above
  *       it) and is opaque, so a click in its margin doesn't fall through to the
  *       inventory slot the row floats over, while each pocket's own panel sends clicks
  *       on it to its slot.</li>
@@ -40,14 +46,39 @@ public final class PocketPixelPanels {
      */
     public static volatile BooleanSupplier openSettings = () -> false;
 
-    /** Registers both panels. Call once at client init. */
+    /**
+     * Above the backing box (lower draws first, so under). MenuKit's default is 100; the
+     * box takes one below it.
+     */
+    private static final int POCKET_PRIORITY = PanelPosition.DEFAULT_PRIORITY + 1;
+
+    /** Registers the pocket panels and the chrome. Call once at client init. */
     public static void register() {
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
+            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
+                final int hotbar = n;
+                final int depth = d;
+                Panel pocket = Panel.builder(Pockets.panelId(n, d))
+                        .add(SlotFlowElement.of(Pockets.groupId(n, d), 1))
+                        // Flush: the slot draws its own frame; the backing box draws the
+                        // raised row behind the shown pockets.
+                        .style(PanelStyle.NONE)
+                        .position(PanelPosition.pixel(() -> PocketGeometry.pocketOrigin(hotbar, depth))
+                                .priority(POCKET_PRIORITY))
+                        .build()
+                        .visibleWhen(PocketsSettings::enabled);
+                // Every screen: the origin is null off the inventory screens, which skips
+                // the panel, and the slots stay parked there as SlotKit leaves them.
+                new ScreenPanelAdapter(pocket, 0).onMatching(ScreenMatcher.all());
+            }
+        }
+
         Panel backing = Panel.builder(HotbarPockets.MOD_ID + ":pocket_backing")
                 .elements(List.of(new RowSpacer()))
                 .visible(true)
                 .style(PanelStyle.RAISED)
                 .position(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
-                        .priority(Pockets.PANEL_PRIORITY - 1))
+                        .priority(POCKET_PRIORITY - 1))
                 .build();
         new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onPlayerInventory();
 

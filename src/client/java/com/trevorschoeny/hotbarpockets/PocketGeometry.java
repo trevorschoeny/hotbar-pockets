@@ -30,11 +30,6 @@ public final class PocketGeometry {
     /** Margin between the raised backing box's edge and the pocket row. */
     public static final int ROW_PAD = 4;
 
-    /** Hands {@link Pockets} the per-frame pocket origin. Call once at client init. */
-    public static void install() {
-        Pockets.origin = PocketGeometry::pocketOrigin;
-    }
-
     /**
      * Where pocket (hotbar, depth)'s slot frame sits this frame: in the floating row over
      * the shown column. Null (skip the frame) unless that column is shown, the pocket is
