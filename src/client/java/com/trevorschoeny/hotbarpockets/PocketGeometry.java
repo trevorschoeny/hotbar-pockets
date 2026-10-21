@@ -7,8 +7,6 @@ import com.trevlar.slotkit.api.slot.CreatedSlot;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.inventory.Slot;
 
 import org.jspecify.annotations.Nullable;
@@ -87,11 +85,12 @@ public final class PocketGeometry {
      * Whether this screen shows pockets: the player's inventory, survival or creative's
      * inventory tab, as in Inventory Max before it. SlotKit builds the slots on every
      * container menu, but in a chest they stay hidden (and inert), since the + and - and the
-     * backing box live only on the inventory. Creative's item tabs show a hotbar
-     * without the slots, so the menu is checked too.
+     * backing box live only on the inventory; MenuKit says which screen that is. Creative's
+     * item tabs have only the hotbar on their menu (SlotKit adds nothing there), so the
+     * pockets being on the menu is what leaves them out.
      */
     public static boolean pocketsPresent(AbstractContainerScreen<?> screen) {
-        if (!(screen instanceof InventoryScreen || screen instanceof CreativeModeInventoryScreen)) return false;
+        if (!PocketPixelPanels.onPlayerInventory(screen)) return false;
         for (Slot s : screen.getMenu().slots) {
             CreatedSlot created = CreatedSlot.of(s);
             if (created != null && Pockets.isPocket(created)) return true;

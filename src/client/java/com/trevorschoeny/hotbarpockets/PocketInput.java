@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import java.util.function.IntConsumer;
 
@@ -18,8 +17,8 @@ import java.util.function.IntConsumer;
  *   <li><b>In the world</b> (no screen): the cycle keys rotate the selected
  *       hotbar slot's pockets. Polled with {@code consumeClick()} in a client
  *       tick (keybinds only fire when no screen is open).</li>
- *   <li><b>In the inventory screen</b>: the cycle keys rotate the hovered
- *       pocket column. Handled with {@code ScreenKeyboardEvents}, since key
+ *   <li><b>In the inventory</b> (survival or creative's inventory tab): the cycle
+ *       keys rotate the hovered pocket column. Handled with {@code ScreenKeyboardEvents}, since key
  *       presses go to the screen, not the keybind poll, while a screen is open.</li>
  * </ul>
  *
@@ -43,9 +42,10 @@ public final class PocketInput {
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(PocketInput::onClientTick);
 
-        // In-screen handling for the inventory screen.
+        // In-screen handling: the cycle keys turn the shown column. A column is shown only
+        // where the pockets are (PocketGeometry.pocketsPresent), so on any other screen
+        // there's none and the keys do nothing.
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
-            if (!(screen instanceof InventoryScreen)) return;
             ScreenKeyboardEvents.afterKeyPress(screen).register((innerScreen, event) -> {
                 if (!PocketsSettings.enabled()) return;
                 if (PocketKeys.CYCLE_FORWARD.matches(event)) {

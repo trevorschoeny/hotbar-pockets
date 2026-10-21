@@ -4,16 +4,18 @@ import com.trevlar.menukit.api.element.Click;
 import com.trevlar.menukit.api.element.InputContext;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.RenderContext;
+import com.trevlar.menukit.api.panel.ModeScope;
 import com.trevlar.menukit.api.panel.Panel;
 import com.trevlar.menukit.api.panel.PanelPosition;
 import com.trevlar.menukit.api.panel.PanelStyle;
-import com.trevlar.menukit.api.panel.ScreenMatcher;
+import com.trevlar.menukit.api.panel.Placement;
 import com.trevlar.menukit.api.panel.ScreenOrigin;
 import com.trevlar.menukit.api.panel.ScreenPanelAdapter;
 import com.trevlar.slotkit.api.group.SlotScreenRect;
 import com.trevlar.slotkit.api.slot.SlotFlowElement;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -52,6 +54,18 @@ public final class PocketPixelPanels {
      */
     private static final int POCKET_PRIORITY = PanelPosition.DEFAULT_PRIORITY + 1;
 
+    /**
+     * The plus and minus strip's adapter, which MenuKit matches to the player inventory in
+     * both modes. {@link #onPlayerInventory} asks it, so the pockets' "which screen" answer
+     * is MenuKit's, not a screen class check of ours.
+     */
+    private static ScreenPanelAdapter buttonsAdapter;
+
+    /** Whether MenuKit counts {@code screen} as the player inventory (survival, or creative's). */
+    static boolean onPlayerInventory(AbstractContainerScreen<?> screen) {
+        return buttonsAdapter != null && buttonsAdapter.matches(screen);
+    }
+
     /** Registers the pocket panels and the chrome. Call once at client init. */
     public static void register() {
         for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
@@ -63,13 +77,16 @@ public final class PocketPixelPanels {
                         // Flush: the slot draws its own frame; the backing box draws the
                         // raised row behind the shown pockets.
                         .style(PanelStyle.NONE)
-                        .position(PanelPosition.pixel(() -> PocketGeometry.pocketOrigin(hotbar, depth))
-                                .priority(POCKET_PRIORITY))
+                        // Both modes, one placement: the origin is worked out from the live
+                        // hotbar slot, which is wherever the open screen puts it.
+                        .in(ModeScope.BOTH, Placement.screen(
+                                PanelPosition.pixel(() -> PocketGeometry.pocketOrigin(hotbar, depth))
+                                        .priority(POCKET_PRIORITY)))
                         .build()
                         .visibleWhen(PocketsSettings::enabled);
-                // Every screen: the origin is null off the inventory screens, which skips
-                // the panel, and the slots stay parked there as SlotKit leaves them.
-                new ScreenPanelAdapter(pocket, 0).onMatching(ScreenMatcher.all());
+                // The player inventory only. On a chest the slots stay parked as SlotKit
+                // leaves them, and on a creative item tab they aren't on the menu at all.
+                new ScreenPanelAdapter(pocket, 0).onPlayerInventory();
             }
         }
 
@@ -77,8 +94,8 @@ public final class PocketPixelPanels {
                 .elements(List.of(new RowSpacer()))
                 .visible(true)
                 .style(PanelStyle.RAISED)
-                .position(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
-                        .priority(POCKET_PRIORITY - 1))
+                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
+                        .priority(POCKET_PRIORITY - 1)))
                 .build();
         new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onPlayerInventory();
 
@@ -91,11 +108,11 @@ public final class PocketPixelPanels {
                 // Above every ordinary panel (Inventory Plus's buttons included), so
                 // plus and minus are never hidden and take their clicks.
                 .popover()
-                .position(PanelPosition.pixel(PocketPixelPanels::buttonsOrigin))
+                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::buttonsOrigin)))
                 .build()
                 // Only a hit inside a button counts; the 1px gap between them eats nothing.
                 .opaque(false);
-        new ScreenPanelAdapter(buttons, 0).onPlayerInventory();
+        buttonsAdapter = new ScreenPanelAdapter(buttons, 0).onPlayerInventory();
     }
 
     // The backing box's outer top-left: the row's first frame less the pad. Null unless
