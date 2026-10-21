@@ -32,12 +32,12 @@ It has to be installed on the server as well as the client. In singleplayer, you
 ## Requirements
 
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-- [MenuKit](https://modrinth.com/mod/menukit) 7.1.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
-- [SlotKit](https://modrinth.com/mod/slotkit) 1.1.0 or newer, below 2.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
+- [MenuKit](https://modrinth.com/mod/menukit) 7.3.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
+- [SlotKit](https://modrinth.com/mod/slotkit) 2.0.0 or newer, below 3.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
 
 ## Pairs well with
 
-- [Inventory Plus](https://modrinth.com/mod/inventory-plus-trevlar) 3.0.0 or newer, my mod for restocking, sorting, and locking slots. With it, Restock and Auto Tool Switch can take from your pockets, its locks and Reach work on pockets, and Hotbar Pockets gets a settings tab. Older versions can't be installed alongside it.
+- [Inventory Plus](https://modrinth.com/mod/inventory-plus-trevlar) 3.2.0 or newer, my mod for restocking, sorting, and locking slots. With it, Restock and Auto Tool Switch can take from your pockets, its locks and Reach work on pockets, and Hotbar Pockets gets a settings tab. Older versions can't be installed alongside it.
 
 ## Compatibility
 
@@ -82,7 +82,7 @@ A hotbar slot and its pockets make a cycle.
 Both keys are in Minecraft's Controls, under Hotbar Pockets.
 
 | Key | Default |
-|---|---|
+| --- | --- |
 | Pocket Cycle Forward | Right arrow |
 | Pocket Cycle Backward | Left arrow |
 
@@ -105,7 +105,7 @@ With Inventory Plus installed, Beside the hotbar on the Pockets tab turns it off
 The settings are on the Pockets tab in Inventory Plus's settings menu. Ctrl-click (Cmd on a Mac) the plus or minus button to open it there. Without Inventory Plus there's no settings menu, and the defaults apply.
 
 | Setting on the Pockets tab | Default |
-|---|---|
+| --- | --- |
 | Pockets (the switch) | On |
 | Show the Pockets button | Off |
 | Beside the hotbar | Mini hotbar |
