@@ -33,7 +33,7 @@
     "inventoryplus": "*"
   },
   "breaks": {
-    "inventoryplus": "<3.0.0"
+    "inventoryplus": "<3.3.0"
   },
   "custom": {
     "slotkit": {
