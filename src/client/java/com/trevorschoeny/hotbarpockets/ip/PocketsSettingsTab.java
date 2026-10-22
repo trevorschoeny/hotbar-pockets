@@ -70,7 +70,7 @@ final class PocketsSettingsTab {
     }
 
     // The body has the frame IP's tabs have: the title, a description, Reset to
-    // Defaults, the On/Off switch, a line, then one setting per line, all greyed while
+    // Defaults, the On/Off switch, a line, then one setting per line, all grayed while
     // Pockets is off.
 
     private static List<PanelElement> body() {
@@ -93,16 +93,16 @@ final class PocketsSettingsTab {
     // these row builders belong in MenuKit instead.
     private static final class Body {
         /**
-         * A divider's colour on the inventory look; the options look draws vanilla's
-         * separator. Text is never hand-coloured: each label names its role and the
-         * menu's kind of screen colours it, so the tab reads on either look.
+         * A divider's color on the inventory look; the options look draws vanilla's
+         * separator. Text is never hand-colored: each label names its role and the
+         * menu's kind of screen colors it, so the tab reads on either look.
          */
         private static final int LINE_COLOR = 0xFF8B8B8B;
 
         private final List<PanelElement> out = new ArrayList<>();
         private int y = 0;
 
-        /** While the feature is off, every control after the frame greys and disables. */
+        /** While the feature is off, every control after the frame grays and disables. */
         private BooleanSupplier featureOn = () -> true;
 
         /**
@@ -133,13 +133,13 @@ final class PocketsSettingsTab {
             return this;
         }
 
-        /** Greyed while the feature is off. */
+        /** Grayed while the feature is off. */
         private BooleanSupplier off() {
             BooleanSupplier on = featureOn;
             return () -> !on.getAsBoolean();
         }
 
-        /** Settings text, turning grey while the feature is off. */
+        /** Settings text, turning gray while the feature is off. */
         private TextLabel settingText(Component text, TextRole role) {
             return TextLabel.builder().at(0, y).text(text).role(role).disabledWhen(off()).build();
         }

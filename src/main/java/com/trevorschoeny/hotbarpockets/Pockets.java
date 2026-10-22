@@ -28,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Each (hotbar, depth) pocket is its own single-slot {@link ParityGroup}, with its
  * own reveal predicate. The client shows each in its own MenuKit panel with its own pixel
  * origin over its hotbar slot ({@code PocketPixelPanels}), so each depth shows on its own
- * and the row re-centres as the count changes. SlotKit builds the groups on
+ * and the row re-centers as the count changes. SlotKit builds the groups on
  * every container menu on both sides with no mixin of ours, and its join check compares
  * the 27 layouts, so a client whose pockets differ from the server's is refused instead
  * of desyncing.

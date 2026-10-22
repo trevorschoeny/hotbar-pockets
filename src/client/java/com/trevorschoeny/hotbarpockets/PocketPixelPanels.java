@@ -160,7 +160,7 @@ public final class PocketPixelPanels {
 
     /**
      * One boxed resize button (minus or plus): a bordered box with a bar or a cross,
-     * greyed at its limit (minus at 0 pockets, plus at 3). A greyed button still takes
+     * grayed at its limit (minus at 0 pockets, plus at 3). A grayed button still takes
      * the click and does nothing. The panel only calls {@link #mouseClicked} for hits
      * inside the button. Ctrl-click (Cmd on a Mac) opens the Pockets settings instead,
      * when there are any ({@link #openSettings}), as Inventory Max's buttons did.
@@ -212,7 +212,7 @@ public final class PocketPixelPanels {
             if (rev < 0) return false;
             if (plus) PocketState.grow(rev);
             else PocketState.shrink(rev);
-            return true; // consumed either way (greyed at the limit, it does nothing)
+            return true; // consumed either way (grayed at the limit, it does nothing)
         }
     }
 }

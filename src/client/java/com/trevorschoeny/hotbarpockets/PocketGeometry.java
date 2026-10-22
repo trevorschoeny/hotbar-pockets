@@ -60,7 +60,7 @@ public final class PocketGeometry {
 
     /**
      * Absolute frame x of the pocket at {@code depth} (0 leftmost) when the shown pockets
-     * float as one row of {@code count}, centred over hotbar slot {@code hotbar}.
+     * float as one row of {@code count}, centered over hotbar slot {@code hotbar}.
      */
     public static int rowX(SlotScreenRect hotbar, int count, int depth) {
         return hotbar.frameX() + Pockets.SLOT / 2 - (count * Pockets.SLOT) / 2 + depth * Pockets.SLOT;
