@@ -32,12 +32,12 @@ It has to be installed on the server as well as the client. In singleplayer, you
 ## Requirements
 
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-- [MenuKit](https://modrinth.com/mod/menukit) 7.3.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
-- [SlotKit](https://modrinth.com/mod/slotkit) 2.0.0 or newer, below 3.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
+- [MenuKit](https://modrinth.com/mod/menukit) 7.4.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
+- [SlotKit](https://modrinth.com/mod/slotkit) 2.1.0 or newer, below 3.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
 
 ## Pairs well with
 
-- [Inventory Plus](https://modrinth.com/mod/inventory-plus-trevlar) 3.2.0 or newer, my mod for restocking, sorting, and locking slots. With it, Restock and Auto Tool Switch can take from your pockets, its locks and Reach work on pockets, and Hotbar Pockets gets a settings tab. Older versions can't be installed alongside it.
+- [Inventory Plus](https://modrinth.com/mod/inventory-plus-trevlar) 3.3.0 or newer, my mod for restocking, sorting, and locking slots. With it, Restock and Auto Tool Switch can take from your pockets, its locks and Reach work on pockets, and Hotbar Pockets gets a settings tab. Older versions can't be installed alongside it.
 
 ## Compatibility
 
@@ -76,7 +76,7 @@ A hotbar slot and its pockets make a cycle.
 - Press the Right arrow to bring the leftmost pocket's item into your hand. Every other pocket's item moves one place left, and the item you were holding goes into the rightmost pocket.
 - Press the Left arrow to go the other way. The rightmost pocket's item comes into your hand, and the item you were holding goes into the leftmost pocket.
 - With no screen open, the keys cycle the selected hotbar slot.
-- In your inventory, hover a hotbar slot or its pockets and press a key to cycle that column. In creative, use the keys with no screen open.
+- In your inventory, including the creative inventory's Survival Inventory tab, hover a hotbar slot or its pockets and press a key to cycle that column.
 - A hotbar slot with no pockets doesn't cycle.
 
 Both keys are in Minecraft's Controls, under Hotbar Pockets.
