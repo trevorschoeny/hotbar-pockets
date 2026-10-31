@@ -14,8 +14,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Screen-space pocket geometry (client only). Every coordinate is an <b>absolute screen
  * pixel</b>, worked out on each call from the live hotbar slots through SlotKit's
- * {@link VanillaSlotResolver}, which is what keeps it right on the survival inventory,
- * and the creative inventory tab (the resolver unwraps creative's slot wrapper).
+ * {@link VanillaSlotResolver}, which is what keeps it right on every container screen,
+ * creative's inventory tab included (the resolver unwraps creative's slot wrapper).
  */
 public final class PocketGeometry {
 
@@ -82,15 +82,12 @@ public final class PocketGeometry {
     }
 
     /**
-     * Whether this screen shows pockets: the player's inventory, survival or creative's
-     * inventory tab, as in Inventory Max before it. SlotKit builds the slots on every
-     * container menu, but in a chest they stay hidden (and inert), since the + and - and the
-     * backing box live only on the inventory; MenuKit says which screen that is. Creative's
-     * item tabs have only the hotbar on their menu (SlotKit adds nothing there), so the
-     * pockets being on the menu is what leaves them out.
+     * Whether this screen shows pockets: any screen whose menu holds them. SlotKit builds
+     * the slots on every container menu, so that's the inventory, creative's inventory tab
+     * and every container (a chest, a furnace, a villager). Creative's item tabs have only
+     * the hotbar on their menu (SlotKit adds nothing there), so they're left out.
      */
     public static boolean pocketsPresent(AbstractContainerScreen<?> screen) {
-        if (!PocketPixelPanels.onPlayerInventory(screen)) return false;
         for (Slot s : screen.getMenu().slots) {
             CreatedSlot created = CreatedSlot.of(s);
             if (created != null && Pockets.isPocket(created)) return true;

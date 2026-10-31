@@ -17,7 +17,7 @@ import java.util.function.IntConsumer;
  *   <li><b>In the world</b> (no screen): the cycle keys rotate the selected
  *       hotbar slot's pockets. Polled with {@code consumeClick()} in a client
  *       tick (keybinds only fire when no screen is open).</li>
- *   <li><b>In the inventory</b> (survival or creative's inventory tab): the cycle
+ *   <li><b>On a screen</b> (any container screen, creative's inventory tab included): the cycle
  *       keys rotate the hovered pocket column. Handled with {@code ScreenKeyboardEvents}, since key
  *       presses go to the screen, not the keybind poll, while a screen is open.</li>
  * </ul>

@@ -18,8 +18,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
  * <p><b>Driven by {@code ScreenEvents.beforeExtract}</b>, which runs once per
  * frame before the pixel panels resolve their origins (which read this state).
  * All geometry is absolute screen pixels taken from the live hotbar slots
- * ({@link PocketGeometry}), so the same math works on survival and the creative
- * inventory tab. Any other screen ({@link PocketGeometry#pocketsPresent}) clears
+ * ({@link PocketGeometry}), so the same math works on every container screen.
+ * A screen without the pockets ({@link PocketGeometry#pocketsPresent}) clears
  * the state, which hides every pocket there.
  */
 public final class PocketHover {

@@ -25,9 +25,9 @@ import java.util.List;
 
 /**
  * Checks for the modes scene (test-gallery/scenes/hotbar-pockets/modes.json): where the pocket
- * column shows. Hovering hotbar slot 1 shows its two pockets on the survival inventory and on
- * creative's inventory tab, and nothing on a creative item tab or a chest. "Shows" is read off
- * what the panels draw from: the pocket's frame origin this frame, and its slot being live.
+ * column shows. Hovering hotbar slot 1 shows its two pockets on the survival inventory, on
+ * creative's inventory tab and on a chest, and nothing on a creative item tab. "Shows" is read
+ * off what the panels draw from: the pocket's frame origin this frame, and its slot being live.
  *
  * <p>In this package so it can ask {@link PocketGeometry#pocketOrigin} directly.
  */
@@ -75,7 +75,8 @@ public class ModeChecks implements FabricClientGameTest {
                 // The station's chest sits at (2, 0, 2) from its origin.
                 var o = scene.station("hotbarpockets:chest").getAsJsonArray("origin");
                 openChest(o.get(0).getAsInt() + 2, o.get(1).getAsInt(), o.get(2).getAsInt() + 2);
-                expectShown(false);
+                expectShown(true);
+                expectPlusAdds();
             });
         } finally {
             ctx.runOnClient(mc -> { while (PocketState.count(HOTBAR) > 0) PocketState.shrink(HOTBAR); });
@@ -120,6 +121,33 @@ public class ModeChecks implements FabricClientGameTest {
             return null;
         });
         if (wrong != null) throw new AssertionError(wrong);
+    }
+
+    /** Clicks the shown column's + (the hover stays on), expects a third pocket, then clicks - to undo it. */
+    private void expectPlusAdds() {
+        double[][] at = ctx.computeOnClient(mc -> {
+            SlotScreenRect r = PocketGeometry.hotbar(screen(mc), HOTBAR);
+            var w = mc.getWindow();
+            double f = (double) w.getScreenWidth() / w.getGuiScaledWidth();
+            // The strip as PocketPixelPanels places it: minus at buttonsX, plus one button and a pixel right.
+            double y = (PocketGeometry.buttonsTop(r) + 2 + PocketGeometry.BUTTON_SIZE / 2.0) * f;
+            double minus = (PocketGeometry.buttonsX(r) + PocketGeometry.BUTTON_SIZE / 2.0) * f;
+            return new double[][]{ { minus + (PocketGeometry.BUTTON_SIZE + 1) * f, y }, { minus, y } };
+        });
+        int before = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+        click(at[0]);
+        int after = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+        if (after != before + 1) throw new AssertionError("+ took " + before + " pockets to " + after + " on the chest");
+        click(at[1]);
+        int undone = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+        if (undone != before) throw new AssertionError("- took " + after + " pockets to " + undone + " on the chest");
+    }
+
+    private void click(double[] at) {
+        ctx.getInput().setCursorPos(at[0], at[1]);
+        ctx.waitTicks(2);
+        ctx.getInput().pressMouse(0);   // GLFW left button
+        ctx.waitTicks(3);
     }
 
     /** Writes pocket (HOTBAR, 0) on the server, then gives the sync a few ticks. */

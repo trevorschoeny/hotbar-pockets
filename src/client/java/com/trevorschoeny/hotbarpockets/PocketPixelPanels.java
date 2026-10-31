@@ -15,7 +15,6 @@ import com.trevlar.slotkit.api.group.SlotScreenRect;
 import com.trevlar.slotkit.api.slot.SlotFlowElement;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -54,18 +53,6 @@ public final class PocketPixelPanels {
      */
     private static final int POCKET_PRIORITY = PanelPosition.DEFAULT_PRIORITY + 1;
 
-    /**
-     * The plus and minus strip's adapter, which MenuKit matches to the player inventory in
-     * both modes. {@link #onPlayerInventory} asks it, so the pockets' "which screen" answer
-     * is MenuKit's, not a screen class check of ours.
-     */
-    private static ScreenPanelAdapter buttonsAdapter;
-
-    /** Whether MenuKit counts {@code screen} as the player inventory (survival, or creative's). */
-    static boolean onPlayerInventory(AbstractContainerScreen<?> screen) {
-        return buttonsAdapter != null && buttonsAdapter.matches(screen);
-    }
-
     /** Registers the pocket panels and the chrome. Call once at client init. */
     public static void register() {
         for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
@@ -84,9 +71,9 @@ public final class PocketPixelPanels {
                                         .priority(POCKET_PRIORITY)))
                         .build()
                         .visibleWhen(PocketsSettings::enabled);
-                // The player inventory only. On a chest the slots stay parked as SlotKit
-                // leaves them, and on a creative item tab they aren't on the menu at all.
-                new ScreenPanelAdapter(pocket, 0).onPlayerInventory();
+                // Every container screen: pockets are ever-present. Where the menu has no
+                // pockets (a creative item tab) the origin is null and nothing draws.
+                new ScreenPanelAdapter(pocket, 0).onAny();
             }
         }
 
@@ -97,7 +84,7 @@ public final class PocketPixelPanels {
                 .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
                         .priority(POCKET_PRIORITY - 1)))
                 .build();
-        new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onPlayerInventory();
+        new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onAny();
 
         Panel buttons = Panel.builder(HotbarPockets.MOD_ID + ":pocket_buttons")
                 .elements(List.of(
@@ -112,7 +99,7 @@ public final class PocketPixelPanels {
                 .build()
                 // Only a hit inside a button counts; the 1px gap between them eats nothing.
                 .opaque(false);
-        buttonsAdapter = new ScreenPanelAdapter(buttons, 0).onPlayerInventory();
+        new ScreenPanelAdapter(buttons, 0).onAny();
     }
 
     // The backing box's outer top-left: the row's first frame less the pad. Null unless
