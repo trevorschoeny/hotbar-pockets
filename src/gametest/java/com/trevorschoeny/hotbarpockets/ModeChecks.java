@@ -16,6 +16,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import testgallery.SceneWorld;
 
 import java.util.ArrayList;
@@ -46,9 +48,12 @@ public class ModeChecks implements FabricClientGameTest {
             // Two pockets behind the hovered slot, as the scene's first station has Trev add.
             ctx.runOnClient(mc -> { while (PocketState.count(HOTBAR) < 2) PocketState.grow(HOTBAR); });
             run("hotbarpockets:survival", "survival", () -> {
+                // Filled in the world, with no screen open, as a pickup or a restock does.
+                setPocket(new ItemStack(Items.DIAMOND, 5));
                 ctx.getInput().pressKey(o -> o.keyInventory);
                 ctx.waitTicks(3);
                 expectShown(true);
+                expectContents();
             });
             run("hotbarpockets:creative_inventory", "creative", () -> {
                 openCreativeTab(CreativeModeTab.Type.INVENTORY);
@@ -114,6 +119,34 @@ public class ModeChecks implements FabricClientGameTest {
             }
             return null;
         });
+        if (wrong != null) throw new AssertionError(wrong);
+    }
+
+    /** Writes pocket (HOTBAR, 0) on the server, then gives the sync a few ticks. */
+    private void setPocket(ItemStack stack) {
+        scene.world().getServer().runOnServer(server -> Pockets.POCKETS
+                .bind(server.getPlayerList().getPlayers().getFirst())
+                .setStack(Pockets.flatIndex(HOTBAR, 0), stack));
+        ctx.waitTicks(5);
+    }
+
+    /**
+     * The diamonds {@link #setPocket} put in pocket (HOTBAR, 0) while the client's slot was
+     * hidden reached the client: its attachment, which the HUD strip reads, and the pocket's
+     * menu slot, which the panel draws. Empties the pocket afterwards.
+     */
+    private void expectContents() {
+        String wrong = ctx.computeOnClient(mc -> {
+            ItemStack attached = Pockets.POCKETS.bind(mc.player).getStack(Pockets.flatIndex(HOTBAR, 0));
+            Slot slot = pocketSlot(mc, 0);
+            ItemStack shown = slot == null ? ItemStack.EMPTY : slot.getItem();
+            if (attached.isEmpty() || shown.isEmpty())
+                return "pocket 0 holds diamonds on the server; the client has " + attached
+                        + " in its attachment and " + shown + " in the slot";
+            return null;
+        });
+        ctx.takeScreenshot("pockets-check-contents");
+        setPocket(ItemStack.EMPTY);
         if (wrong != null) throw new AssertionError(wrong);
     }
 
