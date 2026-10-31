@@ -77,6 +77,7 @@ public class ModeChecks implements FabricClientGameTest {
                 openChest(o.get(0).getAsInt() + 2, o.get(1).getAsInt(), o.get(2).getAsInt() + 2);
                 expectShown(true);
                 expectPlusAdds();
+                expectShiftClickNeverFillsPocket();
             });
         } finally {
             ctx.runOnClient(mc -> { while (PocketState.count(HOTBAR) > 0) PocketState.shrink(HOTBAR); });
@@ -141,6 +142,38 @@ public class ModeChecks implements FabricClientGameTest {
         click(at[1]);
         int undone = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
         if (undone != before) throw new AssertionError("- took " + after + " pockets to " + undone + " on the chest");
+    }
+
+    /**
+     * Shift-clicks the chest's oak logs (menu slot 0) and confirms they never land in a pocket.
+     * Pocket groups turn shiftClickIn on only when Inventory Plus is loaded ({@link Pockets#register});
+     * this gametest run never has it, so this guards the off state the switch must default to.
+     */
+    private void expectShiftClickNeverFillsPocket() {
+        double[] at = ctx.computeOnClient(mc -> {
+            var screen = screen(mc);
+            Slot s = screen.getMenu().slots.get(0);
+            var edge = (com.trevlar.slotkit.mixin.AbstractContainerScreenAccessor) screen;
+            double f = (double) mc.getWindow().getScreenWidth() / mc.getWindow().getGuiScaledWidth();
+            return new double[]{ (edge.sk$getLeftPos() + s.x + 8) * f, (edge.sk$getTopPos() + s.y + 8) * f };
+        });
+        ctx.getInput().setCursorPos(at[0], at[1]);
+        ctx.waitTick();
+        ctx.runOnClient(mc -> {
+            var mouse = (net.fabricmc.fabric.mixin.client.gametest.input.MouseHandlerAccessor) mc.mouseHandler;
+            for (int action : new int[]{ 1, 0 }) mouse.invokeOnButton(mc.getWindow().handle(),
+                    new net.minecraft.client.input.MouseButtonInfo(
+                            com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 1), action);
+        });
+        ctx.waitTicks(5);
+        String wrong = ctx.computeOnClient(mc -> {
+            for (int d = 0; d < 2; d++) {
+                Slot live = pocketSlot(mc, d);
+                if (live != null && live.getItem().is(Items.OAK_LOG)) return "oak logs reached pocket " + d;
+            }
+            return null;
+        });
+        if (wrong != null) throw new AssertionError(wrong);
     }
 
     private void click(double[] at) {

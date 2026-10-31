@@ -10,6 +10,7 @@ import com.trevlar.slotkit.api.slot.SlotSpec;
 import com.trevlar.slotkit.api.storage.StorageAttachment;
 import com.trevlar.slotkit.api.storage.StorageAttachment.PlayerStorageAttachment;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 
@@ -84,11 +85,14 @@ public final class Pockets {
                                 // Read only on the client: shown while this column is the
                                 // hovered one and its count reaches this depth.
                                 .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
-                                // Pockets take no part in vanilla's bulk moves:
-                                // a double-click, a chest's shift-click routing or a drag
-                                // never pulls from or pours into one. Shift-click out stays,
-                                // so a pocket can still be emptied quickly.
-                                .shiftClickIn(false)
+                                // A double-click and drag still never pull from or pour into
+                                // a pocket. Shift-click out always works, so a pocket can be
+                                // emptied quickly. Shift-click in is a SlotKit-level switch,
+                                // on only when Inventory Plus is loaded; IP's Reach already
+                                // denies it by default (protectInReach in PocketsIp), so its
+                                // toggle is what actually turns shift-click-in on, and nothing
+                                // routes into a pocket at all without IP present.
+                                .shiftClickIn(FabricLoader.getInstance().isModLoaded("inventoryplus"))
                                 .collect(false)
                                 .dragFill(false));
             }
