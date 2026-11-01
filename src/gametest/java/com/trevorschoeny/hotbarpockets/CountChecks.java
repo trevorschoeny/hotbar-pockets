@@ -24,7 +24,8 @@ import java.util.Arrays;
  * ({@link PocketCounts}). A player updating from 2.1.0 keeps the layout their client
  * saved, and no item is left in a pocket past the count. Counts survive leaving and
  * rejoining, and death. A pocket past the count is refused by the server itself, with
- * Reach's report saying every pocket may take a shift-click.
+ * Reach's report saying every pocket may take a shift-click. Shrinking in creative with
+ * a full inventory drops the removed pocket's item instead of deleting it.
  */
 public class CountChecks implements FabricClientGameTest {
 
@@ -52,6 +53,7 @@ public class CountChecks implements FabricClientGameTest {
                 server.runOnServer(s -> check(Pockets.POCKETS.bind(player(s)).getStack(Pockets.flatIndex(2, 2)).is(Items.DIAMOND),
                         "the diamonds in pocket (2, 2) are gone after migrating"));
                 serverRefusesPastCount(ctx, server);
+                creativeShrinkKeepsItem(ctx, server);
 
                 // A change the server makes now is the player's, not the file's.
                 ctx.runOnClient(mc -> PocketState.grow(4));
@@ -113,6 +115,36 @@ public class CountChecks implements FabricClientGameTest {
             p.getInventory().setItem(from, ItemStack.EMPTY);
         });
         server.runOnServer(s -> PocketIntake.report(player(s), 0));
+    }
+
+    /**
+     * In creative with a full inventory, shrinking slot 0 from 1 pocket to 0 drops the
+     * pocket's diamonds at the player's feet. Vanilla's Inventory.add would delete them.
+     * Leaves slot 0 at 1 pocket and the player in survival, as it found them.
+     */
+    private static void creativeShrinkKeepsItem(ClientGameTestContext ctx, TestDedicatedServerContext server) {
+        server.runCommand("gamemode creative @a");
+        server.runOnServer(s -> {
+            ServerPlayer p = player(s);
+            var slots = p.getInventory().getNonEquipmentItems();
+            for (int i = 0; i < slots.size(); i++) slots.set(i, new ItemStack(Items.STONE, 64));
+            Pockets.POCKETS.bind(p).setStack(Pockets.flatIndex(0, 0), new ItemStack(Items.DIAMOND, 5));
+        });
+        ctx.waitTicks(5);
+        ctx.runOnClient(mc -> PocketState.shrink(0));
+        ctx.waitTicks(5);
+        server.runOnServer(s -> {
+            ServerPlayer p = player(s);
+            check(Pockets.count(p, 0) == 0, "slot 0 still has a pocket after shrinking in creative");
+            int dropped = p.level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, p.getBoundingBox().inflate(4),
+                    e -> e.getItem().is(Items.DIAMOND)).stream().mapToInt(e -> e.getItem().getCount()).sum();
+            check(dropped == 5, "shrinking in creative with a full inventory kept " + dropped + " of 5 diamonds");
+            p.getInventory().clearContent();
+        });
+        server.runCommand("kill @e[type=item]");
+        server.runCommand("gamemode survival @a");
+        ctx.runOnClient(mc -> PocketState.grow(0));
+        ctx.waitTicks(5);
     }
 
     /** The nine counts on the server and, as SlotKit synced them, on the client. */

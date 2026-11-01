@@ -11,6 +11,8 @@ import net.minecraft.util.Prediction;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+
 /**
  * Server-side pocket changes: the authoritative side of cycling and of emptying
  * pockets on shrink. Works directly on the player's pocket attachment and
@@ -111,12 +113,12 @@ public final class PocketServerOps {
             if (stack.isEmpty()) continue;
             ItemStack moving = stack.copy();
             pockets.setStack(idx, ItemStack.EMPTY);
-            // Vanilla add-to-inventory (leaves the remainder in `moving`).
-            sp.getInventory().add(moving);
-            if (!moving.isEmpty()) {
-                sp.drop(moving, false, Prediction.SERVER_ONLY); // no room, drop the remainder
+            // Not Inventory.add: for a player in creative it deletes whatever doesn't fit.
+            for (ItemStack rest : InventoryMaxRecovery.giveBack(sp.getInventory().getNonEquipmentItems(), List.of(moving))) {
+                sp.drop(rest, false, Prediction.SERVER_ONLY); // no room, drop the remainder
             }
         }
+        sp.getInventory().setChanged();
         pockets.markDirty();
         sp.inventoryMenu.broadcastChanges();
     }

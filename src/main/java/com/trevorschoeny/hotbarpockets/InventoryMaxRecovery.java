@@ -93,7 +93,8 @@ public final class InventoryMaxRecovery {
      * The stacks are consumed.
      *
      * <p>Not {@code Inventory.add}: for a player in creative it deletes whatever doesn't
-     * fit, and these are items the player can't get back any other way.
+     * fit, and these are items the player can't get back any other way. Shrinking a
+     * pocket count ({@link PocketServerOps#evict}) uses it for the same reason.
      */
     static List<ItemStack> giveBack(NonNullList<ItemStack> slots, List<ItemStack> stacks) {
         List<ItemStack> leftovers = new ArrayList<>();
