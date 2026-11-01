@@ -4,6 +4,7 @@ import com.trevorschoeny.hotbarpockets.HotbarPockets;
 import com.trevorschoeny.hotbarpockets.PocketInput;
 import com.trevorschoeny.hotbarpockets.PocketOperations;
 import com.trevorschoeny.hotbarpockets.PocketPixelPanels;
+import com.trevorschoeny.hotbarpockets.PocketState;
 import com.trevorschoeny.hotbarpockets.Pockets;
 import com.trevorschoeny.hotbarpockets.PocketsSettings;
 
@@ -49,7 +50,7 @@ public final class PocketsIp {
         };
         InventoryPlusApi.addFeatureSwitch(PocketsSettingsTab.TAB_ID, "Pockets",
                 Identifier.fromNamespaceAndPath(HotbarPockets.MOD_ID, "pockets_button"),
-                PocketsSettings::enabled, PocketsSettings::setEnabled, PocketsSettings::showButton,
+                PocketsSettings::enabled, on -> { PocketsSettings.setEnabled(on); PocketState.reportIntake(); }, PocketsSettings::showButton,
                 "Hover over a hotbar slot to show its pockets");
 
         List<SlotGroupId> pocketGroups = new ArrayList<>();

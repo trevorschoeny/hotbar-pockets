@@ -54,6 +54,9 @@ public class ModeChecks implements FabricClientGameTest {
                 ctx.waitTicks(3);
                 expectShown(true);
                 expectContents();
+                if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("inventoryplus")) {
+                    expectShiftClickOnlyIntoShownPockets();
+                }
             });
             run("hotbarpockets:creative_inventory", "creative", () -> {
                 openCreativeTab(CreativeModeTab.Type.INVENTORY);
@@ -150,9 +153,70 @@ public class ModeChecks implements FabricClientGameTest {
      * this gametest run never has it, so this guards the off state the switch must default to.
      */
     private void expectShiftClickNeverFillsPocket() {
+        shiftClick(0);
+        String wrong = ctx.computeOnClient(mc -> {
+            for (int d = 0; d < 2; d++) {
+                Slot live = pocketSlot(mc, d);
+                if (live != null && live.getItem().is(Items.OAK_LOG)) return "oak logs reached pocket " + d;
+            }
+            return null;
+        });
+        if (wrong != null) throw new AssertionError(wrong);
+    }
+
+    /**
+     * With Inventory Plus's Reach letting shift-clicks into every pocket, a shift-click on the
+     * inventory (where pockets come first) lands only in a pocket this world shows: one of
+     * HOTBAR's two, never hotbar 0's, which has none. The server shows all 27, so it holds to
+     * what the client reports ({@link PocketIntake}). Run with {@code -PwithIp}.
+     */
+    private void expectShiftClickOnlyIntoShownPockets() {
+        List<String> pockets = new ArrayList<>();
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++)
+            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) pockets.add(Pockets.groupId(n, d).asString());
+        ctx.runOnClient(mc -> com.trevorschoeny.inventoryplus.lockgroups.Reach.setDenied("menukit:shift_click_in", pockets, false));
+        // Reopened, so the screen reports the pockets under the new reach.
+        ctx.setScreen(() -> null);
+        ctx.waitTicks(2);
+        ctx.getInput().pressKey(o -> o.keyInventory);
+        ctx.waitTicks(3);
+        scene.world().getServer().runOnServer(server -> server.getPlayerList().getPlayers().getFirst()
+                .getInventory().setItem(20, new ItemStack(Items.DIRT, 5)));
+        ctx.waitTicks(3);
+        try {
+            shiftClick(20);   // main inventory slot 20 is menu slot 20 on the inventory
+            String wrong = scene.world().getServer().computeOnServer(server -> {
+                var stacks = Pockets.POCKETS.bind(server.getPlayerList().getPlayers().getFirst());
+                String found = null;
+                for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
+                    for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
+                        ItemStack s = stacks.getStack(Pockets.flatIndex(n, d));
+                        if (!s.is(Items.DIRT)) continue;
+                        if (n != HOTBAR || d >= 2) return "dirt reached hidden pocket (" + n + ", " + d + ")";
+                        found = "shown";
+                        stacks.setStack(Pockets.flatIndex(n, d), ItemStack.EMPTY);
+                    }
+                }
+                return found == null ? "dirt reached no pocket, though the reach allows it" : null;
+            });
+            if (wrong != null) throw new AssertionError(wrong);
+        } finally {
+            ctx.runOnClient(mc -> com.trevorschoeny.inventoryplus.lockgroups.Reach.revert("menukit:shift_click_in"));
+            scene.world().getServer().runOnServer(server -> {
+                var p = server.getPlayerList().getPlayers().getFirst();
+                p.getInventory().setItem(20, ItemStack.EMPTY);
+                var stacks = Pockets.POCKETS.bind(p);
+                for (int i = 0; i < Pockets.TOTAL; i++) stacks.setStack(i, ItemStack.EMPTY);
+            });
+            ctx.waitTicks(3);
+        }
+    }
+
+    /** Shift-clicks menu slot {@code index} on the open screen with the real mouse. */
+    private void shiftClick(int index) {
         double[] at = ctx.computeOnClient(mc -> {
             var screen = screen(mc);
-            Slot s = screen.getMenu().slots.get(0);
+            Slot s = screen.getMenu().slots.get(index);
             var edge = (com.trevlar.slotkit.mixin.AbstractContainerScreenAccessor) screen;
             double f = (double) mc.getWindow().getScreenWidth() / mc.getWindow().getGuiScaledWidth();
             return new double[]{ (edge.sk$getLeftPos() + s.x + 8) * f, (edge.sk$getTopPos() + s.y + 8) * f };
@@ -166,14 +230,6 @@ public class ModeChecks implements FabricClientGameTest {
                             com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT, 1), action);
         });
         ctx.waitTicks(5);
-        String wrong = ctx.computeOnClient(mc -> {
-            for (int d = 0; d < 2; d++) {
-                Slot live = pocketSlot(mc, d);
-                if (live != null && live.getItem().is(Items.OAK_LOG)) return "oak logs reached pocket " + d;
-            }
-            return null;
-        });
-        if (wrong != null) throw new AssertionError(wrong);
     }
 
     private void click(double[] at) {

@@ -28,11 +28,14 @@ public final class HotbarPockets implements ModInitializer {
         PocketOperations.define();
         // Inventory Max's saved pockets, elytra and totem, given back on join.
         InventoryMaxRecovery.register();
+        // Shift-clicks land only in the pockets the client reports.
+        PocketIntake.register();
 
         // Payload types are known on both sides, wherever the payload travels.
         PayloadTypeRegistry.serverboundPlay().register(PocketRotateC2S.TYPE, PocketRotateC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(PocketEvictC2S.TYPE, PocketEvictC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(PocketQuickMoveC2S.TYPE, PocketQuickMoveC2S.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PocketIntakeC2S.TYPE, PocketIntakeC2S.CODEC);
 
         // The server's half of each request, run on the server thread.
         ServerPlayNetworking.registerGlobalReceiver(PocketRotateC2S.TYPE, (payload, context) -> {
@@ -62,6 +65,12 @@ public final class HotbarPockets implements ModInitializer {
             if (take == null || put == null) return;
             server.execute(() -> PocketServerOps.quickMove(
                     sp, payload.hotbar(), payload.depth(), take, put));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(PocketIntakeC2S.TYPE, (payload, context) -> {
+            ServerPlayer sp = context.player();
+            MinecraftServer server = sp.level().getServer();
+            if (server == null) return;
+            server.execute(() -> PocketIntake.report(sp, payload.mask()));
         });
     }
 }

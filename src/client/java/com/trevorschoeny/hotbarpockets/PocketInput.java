@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
 import java.util.function.IntConsumer;
 
@@ -46,6 +47,10 @@ public final class PocketInput {
         // where the pockets are (PocketGeometry.pocketsPresent), so on any other screen
         // there's none and the keys do nothing.
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
+            // Before any shift-click on this screen, the server learns which pockets take
+            // one. Every container screen re-reports, so a Reach change made in a settings
+            // screen holds once the player is back on a container.
+            if (screen instanceof AbstractContainerScreen<?>) PocketState.reportIntake();
             ScreenKeyboardEvents.afterKeyPress(screen).register((innerScreen, event) -> {
                 if (!PocketsSettings.enabled()) return;
                 if (PocketKeys.CYCLE_FORWARD.matches(event)) {

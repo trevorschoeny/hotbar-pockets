@@ -91,7 +91,9 @@ public final class Pockets {
                                 // on only when Inventory Plus is loaded; IP's Reach already
                                 // denies it by default (protectInReach in PocketsIp), so its
                                 // toggle is what actually turns shift-click-in on, and nothing
-                                // routes into a pocket at all without IP present.
+                                // routes into a pocket at all without IP present. The server
+                                // holds to the pockets the client shows and allows
+                                // (PocketIntake), since Reach and the count live there.
                                 .shiftClickIn(FabricLoader.getInstance().isModLoaded("inventoryplus"))
                                 .collect(false)
                                 .dragFill(false));
