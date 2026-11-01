@@ -18,9 +18,7 @@ import net.minecraft.resources.Identifier;
  * back. The client only sends the request; {@link PocketServerOps#rotate} does
  * the work.
  *
- * <p>{@code count} is the client's current per-world pocket count for that
- * hotbar slot (the server doesn't track it). Trusting it is harmless, since it
- * only limits which pocket slots take part in the rotation.
+ * <p>The ring is the hotbar slot and its live pockets, by the server's own count.
  *
  * <p>{@code take} and {@code put} name the operation the rotation serves by id:
  * the pocket's own cycle, or a restock or tool switch reaching a pocket (a
@@ -28,7 +26,7 @@ import net.minecraft.resources.Identifier;
  * in SlotKit and asks {@code SlotOperations.allows} for it on every ring slot
  * before rotating; an id it does not know drops the packet.
  */
-public record PocketRotateC2S(int hotbar, int count, boolean forward, Identifier take, Identifier put)
+public record PocketRotateC2S(int hotbar, boolean forward, Identifier take, Identifier put)
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<PocketRotateC2S> TYPE =
@@ -39,12 +37,11 @@ public record PocketRotateC2S(int hotbar, int count, boolean forward, Identifier
             StreamCodec.of(
                     (buf, p) -> {
                         buf.writeVarInt(p.hotbar);
-                        buf.writeVarInt(p.count);
                         buf.writeBoolean(p.forward);
                         Identifier.STREAM_CODEC.encode(buf, p.take);
                         Identifier.STREAM_CODEC.encode(buf, p.put);
                     },
-                    buf -> new PocketRotateC2S(buf.readVarInt(), buf.readVarInt(), buf.readBoolean(),
+                    buf -> new PocketRotateC2S(buf.readVarInt(), buf.readBoolean(),
                             Identifier.STREAM_CODEC.decode(buf), Identifier.STREAM_CODEC.decode(buf)));
 
     @Override

@@ -93,9 +93,9 @@ public final class PocketCyclable implements HotbarCyclable {
         if (!PocketsSettings.enabled()) return -1;
         int hotbar = hotbarOf(slot);
         int depth = depthOf(slot);
-        // Only shown pockets are reachable: depth must be within the hotbar
-        // slot's current per-world pocket count. (Hidden pockets exist on the
-        // server but aren't part of any active cycle.)
+        // Only live pockets are reachable: depth must be within the hotbar
+        // slot's pocket count. (Pockets past it are inert on both sides and
+        // aren't part of any cycle.)
         if (depth >= PocketState.count(hotbar)) return -1;
         // A pocket's column is the hotbar position the rotation brings it to.
         return hotbar;
@@ -153,15 +153,14 @@ public final class PocketCyclable implements HotbarCyclable {
         // The same judgement Inventory Plus asks before choosing this pocket as a
         // source, so a pocket it chose is one this bring will run for.
         if (!allowsBringToHotbar(slot, take, put)) return CyclerOperation.NO_OP;
-        rotate(hotbar, count, forward, steps, take, put);
+        rotate(hotbar, forward, steps, take, put);
         // Undo: same step count, opposite direction. The parameters are captured
         // so the reversal doesn't depend on current state, which may have
         // drifted, as the CyclerOperation contract requires.
         final int undoHotbar = hotbar;
-        final int undoCount = count;
         final int undoSteps = steps;
         final boolean undoForward = !forward;
-        return () -> rotate(undoHotbar, undoCount, undoForward, undoSteps, take, put);
+        return () -> rotate(undoHotbar, undoForward, undoSteps, take, put);
     }
 
     @Override
@@ -229,11 +228,11 @@ public final class PocketCyclable implements HotbarCyclable {
     // slot as deliberately changing so Restock resets its baseline across the
     // round trip rather than reading the swapped-in tool as damaged or run out.
     // (The class doc explains why pockets need this and Column Cycler doesn't.)
-    private static void rotate(int hotbar, int count, boolean forward, int steps,
+    private static void rotate(int hotbar, boolean forward, int steps,
                                BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
         InventoryPlusApi.suppressRestockFor(hotbar);
         for (int i = 0; i < steps; i++) {
-            ClientPlayNetworking.send(new PocketRotateC2S(hotbar, count, forward, take.id(), put.id()));
+            ClientPlayNetworking.send(new PocketRotateC2S(hotbar, forward, take.id(), put.id()));
         }
     }
 }

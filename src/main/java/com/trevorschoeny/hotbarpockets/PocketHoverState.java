@@ -9,7 +9,7 @@ package com.trevorschoeny.hotbarpockets;
  * predicate. SlotKit only evaluates it on the client (the server keeps slots
  * visible so their contents sync), but the lambda is built on the server too,
  * so this class must not pull in client types. It is a plain set of flags the
- * client updates each frame; the per-world counts are pushed in from the
+ * client updates each frame; the counts are pushed in from the
  * client-side {@link PocketState}.
  *
  * <h3>Reveal model</h3>
@@ -41,7 +41,7 @@ public final class PocketHoverState {
         return counts[hotbar];
     }
 
-    /** The client pushes the live per-world count for a hotbar slot. */
+    /** The client pushes the live count for a hotbar slot. */
     public static void setCount(int hotbar, int count) {
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
         counts[hotbar] = count;

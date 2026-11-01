@@ -22,14 +22,14 @@ public final class PocketServerOps {
     private PocketServerOps() {}
 
     /**
-     * Rotates the ring [hotbar slot, pocket 0 to pocket count-1] by one step.
+     * Rotates the ring [hotbar slot, its live pockets] by one step.
      * FORWARD brings pocket 0 into the hand and wraps the hand's item to the
      * topmost pocket; BACKWARD is the mirror.
      */
-    public static void rotate(ServerPlayer sp, int hotbar, int count, boolean forward,
+    public static void rotate(ServerPlayer sp, int hotbar, boolean forward,
                               BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
         if (sp == null || hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
-        count = Math.max(0, Math.min(Pockets.MAX_PER_SLOT, count));
+        int count = Pockets.count(sp, hotbar);
         if (count < 1) return; // a ring needs at least 2 members (1 pocket and the hotbar slot)
         // Asked again here, for the operation the packet names. The client asked
         // before sending, but Inventory Plus's locks live on the client, so the
@@ -95,7 +95,8 @@ public final class PocketServerOps {
 
     /**
      * Empty pocket depths {@code [from, to)} of {@code hotbar} into the
-     * player's inventory; drop anything that doesn't fit. Used on shrink.
+     * player's inventory; drop anything that doesn't fit. Used on shrink
+     * ({@link PocketCounts#set}), before those pockets go inert.
      */
     public static void evict(ServerPlayer sp, int hotbar, int from, int to) {
         if (sp == null || hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;

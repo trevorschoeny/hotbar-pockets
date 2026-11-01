@@ -19,7 +19,7 @@ import java.nio.file.Path;
  * game's options, not here.
  *
  * <p>All of them are client settings; only client code reads them. Pocket counts aren't
- * settings: they're per-world state ({@code PocketState}, in the same folder).
+ * settings: they're the player's, kept on the server ({@code PocketCounts}).
  *
  * <p>Changed from the Pockets tab in Inventory Plus's settings menu when IP is
  * installed. Without IP there's no menu and the defaults (or the file) apply.

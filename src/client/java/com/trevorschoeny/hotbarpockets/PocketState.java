@@ -1,7 +1,5 @@
 package com.trevorschoeny.hotbarpockets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -10,6 +8,7 @@ import com.google.gson.JsonSyntaxException;
 import com.trevlar.slotkit.api.window.BehaviorKeys;
 import com.trevlar.slotkit.api.window.SlotOperations;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -21,44 +20,44 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Client-side, per-world pocket <b>counts</b>: how many pockets (0 to 3) each of the 9
- * hotbar slots shows. The 27 slots always exist on the server; this decides how many of
- * each hotbar slot's 3 are shown and usable. Players keep a different layout per world,
- * and the server never tracks it (the rotate and evict payloads carry the count).
- * A world starts with none. Saved to {@code config/hotbarpockets/pockets.json}.
+ * The client's side of pocket <b>counts</b>: how many pockets (0 to 3) each of the 9
+ * hotbar slots has. The server owns them ({@link PocketCounts}) and SlotKit syncs them
+ * as each pocket's active count; this reads that copy and asks the server to change it.
  *
  * <p>Pushes counts into the server-safe {@link PocketHoverState} for the slots' reveal
- * predicates.
+ * predicates and the panels.
+ *
+ * <h3>Migration</h3>
+ *
+ * Until 2.1.0 the client saved counts per world name or server address in
+ * {@code config/hotbarpockets/pockets.json}. That file is now only read: on joining a
+ * world, its counts for that world go to the server once ({@link PocketLegacyCountsC2S}),
+ * which takes them only if it has none of its own for the player.
  */
-// This mod's own file, beside its settings (config/hotbarpockets/config.json).
 public final class PocketState {
 
     private PocketState() {}
 
-    private static final int CURRENT_VERSION = 1;
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    /** World id to its nine saved counts, from the pre-2.1.1 file. */
+    private static final Map<String, int[]> LEGACY = new ConcurrentHashMap<>();
 
-    /** Nine zeros: no pockets anywhere. A world holding this is not stored at all. */
-    private static final List<Integer> NO_POCKETS = Collections.nCopies(Pockets.HOTBAR_SLOTS, 0);
-
-    /** World id to its nine counts, immutable lists. Sorted, so the file is stable. */
-    private static final Map<String, List<Integer>> BY_WORLD = Collections.synchronizedMap(new TreeMap<>());
-
-    private static Path filePath() {
-        return FabricLoader.getInstance().getConfigDir().resolve(HotbarPockets.MOD_ID).resolve("pockets.json");
+    /** Reads the legacy file and sends this world's counts on every join. */
+    public static void register() {
+        loadLegacy();
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> {
+            String world = worldId();
+            int[] counts = world == null ? null : LEGACY.get(world);
+            if (counts != null && ClientPlayNetworking.canSend(PocketLegacyCountsC2S.TYPE)) {
+                sender.sendPacket(new PocketLegacyCountsC2S(counts));
+            }
+        });
     }
 
-    /**
-     * Where the player is: {@code singleplayer:<level name>} or {@code server:<address>},
-     * or null outside a world (reads give no pockets, writes do nothing).
-     */
+    /** {@code singleplayer:<level name>} or {@code server:<address>}, as the file keys them. */
     private static @Nullable String worldId() {
         Minecraft mc = Minecraft.getInstance();
         IntegratedServer sp = mc.getSingleplayerServer();
@@ -67,81 +66,55 @@ public final class PocketState {
         return server != null ? "server:" + server.ip : null;
     }
 
-    /** Reads the file once, at client init. A missing or broken file starts empty. */
-    public static void load() {
-        Path path = filePath();
+    // Package-private for CountChecks, which writes a legacy file and reads it again.
+    static void loadLegacy() {
+        Path path = FabricLoader.getInstance().getConfigDir().resolve(HotbarPockets.MOD_ID).resolve("pockets.json");
         if (!Files.exists(path)) return;
         try {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             JsonObject perWorld = root.has("perWorld") ? root.getAsJsonObject("perWorld") : new JsonObject();
             for (var e : perWorld.entrySet()) {
                 JsonArray arr = e.getValue().getAsJsonObject().getAsJsonArray("counts");
-                List<Integer> counts = new ArrayList<>(NO_POCKETS);
-                for (int i = 0; arr != null && i < Pockets.HOTBAR_SLOTS && i < arr.size(); i++) {
-                    counts.set(i, clamp(arr.get(i).getAsInt()));
-                }
-                if (!NO_POCKETS.equals(counts)) BY_WORLD.put(e.getKey(), List.copyOf(counts));
+                int[] counts = new int[Pockets.HOTBAR_SLOTS];
+                for (int i = 0; arr != null && i < counts.length && i < arr.size(); i++) counts[i] = arr.get(i).getAsInt();
+                LEGACY.put(e.getKey(), counts);
             }
         } catch (IOException | JsonSyntaxException | IllegalStateException | ClassCastException ex) {
-            HotbarPockets.LOGGER.error("[hotbarpockets] failed to read {}, starting empty", path, ex);
+            HotbarPockets.LOGGER.error("[hotbarpockets] failed to read {}, no counts to carry over", path, ex);
         }
     }
 
-    private static int clamp(int c) {
-        return Math.max(0, Math.min(Pockets.MAX_PER_SLOT, c));
-    }
-
-    private static List<Integer> current() {
-        String world = worldId();
-        return world == null ? NO_POCKETS : BY_WORLD.getOrDefault(world, NO_POCKETS);
-    }
-
-    /** The count for a hotbar slot in this world. A read: never creates an entry. */
+    /** The count for a hotbar slot, as the server last sent it; 0 outside a world. */
     public static int count(int hotbar) {
-        if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return 0;
-        return current().get(hotbar);
+        var player = Minecraft.getInstance().player;
+        if (player == null || hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return 0;
+        return Pockets.count(player, hotbar);
     }
 
-    private static void setCount(int hotbar, int value) {
-        String world = worldId();
-        if (world == null) return;
-        List<Integer> next = new ArrayList<>(current());
-        next.set(hotbar, clamp(value));
-        if (NO_POCKETS.equals(next)) BY_WORLD.remove(world);
-        else BY_WORLD.put(world, List.copyOf(next));
-        save();
-        // Push what is now stored, so the hover state can never disagree with it.
-        PocketHoverState.setCount(hotbar, count(hotbar));
-        reportIntake();
-    }
-
-    /** Grows a hotbar slot's pockets by one, up to 3. At 0 this adds the first. */
+    /** Asks the server for one more pocket behind a hotbar slot, up to 3. */
     public static void grow(int hotbar) {
         int c = count(hotbar);
-        if (c < Pockets.MAX_PER_SLOT) setCount(hotbar, c + 1);
+        if (c < Pockets.MAX_PER_SLOT) ClientPlayNetworking.send(new PocketCountC2S(hotbar, c + 1));
     }
 
     /**
-     * Shrinks a hotbar slot's pockets by one. The server moves the removed top pocket's
-     * item into the inventory, or drops it if there's no room; then the count drops.
+     * Asks the server for one fewer. It moves the removed top pocket's item into the
+     * inventory, or drops it if there's no room, then drops the count.
      */
     public static void shrink(int hotbar) {
         int c = count(hotbar);
-        if (c <= 0) return;
-        ClientPlayNetworking.send(new PocketEvictC2S(hotbar, c - 1, c));
-        setCount(hotbar, c - 1);
+        if (c > 0) ClientPlayNetworking.send(new PocketCountC2S(hotbar, c - 1));
     }
 
     /** Pushes every hotbar slot's count into the server-safe hover state. */
     public static void pushAll() {
-        List<Integer> counts = current();
-        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) PocketHoverState.setCount(n, counts.get(n));
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) PocketHoverState.setCount(n, count(n));
     }
 
     /**
-     * Tells the server which pockets may take a shift-click ({@link PocketIntake}): those
-     * within this world's count, while pockets are on, that this client's rules allow a
-     * shift-click into (Inventory Plus's Reach judges here, on the client).
+     * Tells the server which pockets may take a shift-click ({@link PocketIntake}): while
+     * pockets are on, those this client's rules allow a shift-click into (Inventory Plus's
+     * Reach judges here, on the client). Which pockets exist the server knows itself.
      */
     public static void reportIntake() {
         Minecraft mc = Minecraft.getInstance();
@@ -149,7 +122,7 @@ public final class PocketState {
         var menu = mc.player.inventoryMenu;
         int mask = 0;
         for (int n = 0; PocketsSettings.enabled() && n < Pockets.HOTBAR_SLOTS; n++) {
-            for (int d = 0; d < count(n); d++) {
+            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
                 int idx = PocketRing.pocketMenuIndex(menu, n, d);
                 if (idx >= 0 && SlotOperations.allows(menu, menu.getSlot(idx), mc.player, BehaviorKeys.SHIFT_CLICK_IN)) {
                     mask |= 1 << Pockets.flatIndex(n, d);
@@ -157,28 +130,5 @@ public final class PocketState {
             }
         }
         ClientPlayNetworking.send(new PocketIntakeC2S(mask));
-    }
-
-    private static void save() {
-        Path path = filePath();
-        try {
-            Files.createDirectories(path.getParent());
-            JsonObject perWorld = new JsonObject();
-            synchronized (BY_WORLD) {
-                BY_WORLD.forEach((world, counts) -> {
-                    JsonArray arr = new JsonArray();
-                    counts.forEach(arr::add);
-                    JsonObject w = new JsonObject();
-                    w.add("counts", arr);
-                    perWorld.add(world, w);
-                });
-            }
-            JsonObject root = new JsonObject();
-            root.addProperty("version", CURRENT_VERSION);
-            root.add("perWorld", perWorld);
-            Files.writeString(path, GSON.toJson(root));
-        } catch (IOException ex) {
-            HotbarPockets.LOGGER.error("[hotbarpockets] failed to write {}, counts won't persist", path, ex);
-        }
     }
 }

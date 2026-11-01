@@ -13,19 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Which pockets the server lets a shift-click land in: only the ones the player's
- * client reported ({@link PocketIntakeC2S}), none until it has.
+ * client reported Reach allows ({@link PocketIntakeC2S}), none until it has.
  *
  * <h3>Why the server needs telling</h3>
  *
- * The server shows all 27 pockets and judges every shift-click itself, but the two
- * things that decide whether a pocket should take one live on the client: the
- * per-world count ({@code PocketState}), so a pocket past it is hidden there, and
- * Inventory Plus's Reach, which is client-only and absent on a dedicated server.
- * Left alone, a server routed shift-clicks into hidden pockets, and on a dedicated
- * server with Inventory Plus into any pocket at all, whatever Reach said: the item
- * vanished from view. The client knows both, so it reports one answer per pocket,
- * and this veto holds the server to it. A client can only narrow what its own
- * pockets accept, so trusting the report is safe.
+ * The server judges every shift-click itself, and keeps pockets past the player's
+ * count inert ({@link PocketCounts}), so those it never fills. But Inventory Plus's
+ * Reach, which decides whether a live pocket takes a shift-click, is client-only and
+ * absent on a dedicated server. Left alone, a dedicated server with Inventory Plus
+ * routed shift-clicks into pockets whatever Reach said. The client reports Reach's
+ * answer per pocket, and this veto holds the server to it. A client can only narrow
+ * what its own pockets accept, so trusting the report is safe.
  *
  * <p>Only the plain shift-click is judged here. A move run under another operation
  * (a restock's quick-move) is judged as that operation, by its own rules.

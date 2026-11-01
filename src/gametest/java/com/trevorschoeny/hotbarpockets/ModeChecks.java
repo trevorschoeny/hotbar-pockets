@@ -46,7 +46,7 @@ public class ModeChecks implements FabricClientGameTest {
         try (SceneWorld.Opened scene = SceneWorld.open(ctx, "hotbar-pockets", "modes")) {
             this.scene = scene;
             // Two pockets behind the hovered slot, as the scene's first station has Trev add.
-            ctx.runOnClient(mc -> { while (PocketState.count(HOTBAR) < 2) PocketState.grow(HOTBAR); });
+            setCount(2);
             run("hotbarpockets:survival", "survival", () -> {
                 // Filled in the world, with no screen open, as a pickup or a restock does.
                 setPocket(new ItemStack(Items.DIAMOND, 5));
@@ -83,9 +83,21 @@ public class ModeChecks implements FabricClientGameTest {
                 expectShiftClickNeverFillsPocket();
             });
         } finally {
-            ctx.runOnClient(mc -> { while (PocketState.count(HOTBAR) > 0) PocketState.shrink(HOTBAR); });
+            setCount(0);
         }
         if (!failures.isEmpty()) throw new AssertionError("pocket mode checks failed:\n- " + String.join("\n- ", failures));
+    }
+
+    /** Steps HOTBAR's count to {@code want} with + and -, waiting for the server's answer each time. */
+    private void setCount(int want) {
+        for (int i = 0; i < Pockets.MAX_PER_SLOT; i++) {
+            int c = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+            if (c == want) return;
+            ctx.runOnClient(mc -> { if (c < want) PocketState.grow(HOTBAR); else PocketState.shrink(HOTBAR); });
+            ctx.waitTicks(3);
+        }
+        int c = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+        if (c != want) throw new AssertionError("couldn't set slot " + HOTBAR + "'s pockets to " + want + ", the server says " + c);
     }
 
     /** Runs one station's check in {@code mode}, recording a failure instead of stopping. */

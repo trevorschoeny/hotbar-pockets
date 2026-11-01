@@ -12,6 +12,8 @@ import com.trevlar.slotkit.api.storage.StorageAttachment.PlayerStorageAttachment
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.NonNullList;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -21,10 +23,11 @@ import net.minecraft.world.item.ItemStack;
  *
  * SlotKit builds a fixed set of slots when a menu is built; it can't add or remove
  * slots per player later. So the maximum always exists, 3 pockets behind each of the
- * 9 hotbar slots (27 in all), as real, server-synced, saved slots, and a client-side
- * per-world count ({@code PocketState}) decides how many of each hotbar slot's 3 are
- * shown and usable. A hidden pocket is inert: invisible and unclickable, but its item
- * stays saved on the server.
+ * 9 hotbar slots (27 in all), as real, server-synced, saved slots, and the player's
+ * count ({@link PocketCounts}, kept on the server) decides how many of each hotbar
+ * slot's 3 are live. Each pocket opts in to SlotKit's active count, so one past the
+ * count is inert on both sides: invisible, unclickable and skipped by shift-clicks,
+ * while its item stays saved on the server.
  *
  * <p>Each (hotbar, depth) pocket is its own single-slot {@link ParityGroup}, with its
  * own reveal predicate. The client shows each in its own MenuKit panel with its own pixel
@@ -61,6 +64,9 @@ public final class Pockets {
     /** The 27 stacks, saved with the player on the server. Drop on death as the inventory does. */
     public static PlayerStorageAttachment<NonNullList<ItemStack>> POCKETS;
 
+    // Each pocket's group, by flatIndex, for its active count.
+    private static final ParityGroup[] GROUPS = new ParityGroup[TOTAL];
+
     /** Call once from the main entrypoint, on both sides. */
     public static void register() {
         POCKETS = StorageAttachment.playerAttached(MOD_ID, "pockets", TOTAL);
@@ -77,11 +83,14 @@ public final class Pockets {
 
                 // The 1.x panel id stays the owner, so the group id, the saved stacks and
                 // every setting keyed to them carry over unchanged.
-                ParityGroup.register(panelId(n, d), SlotSpec.at(GROUP, SlotGroupCategory.PLAYER_INVENTORY)
+                GROUPS[flatIndex(n, d)] = ParityGroup.register(panelId(n, d), SlotSpec.at(GROUP, SlotGroupCategory.PLAYER_INVENTORY)
                                 // A 1-slot window onto the shared 27-stack attachment. The
                                 // slice also fires the advancement trigger on server writes.
                                 .storage(p -> new SliceStorage(POCKETS.bind(p), flatIndex(hotbar, depth), 1, p))
                                 .label("Pocket")
+                                // Live (1) only while the player's count reaches this
+                                // depth; the server sets it (PocketCounts).
+                                .activeCount(0)
                                 // Read only on the client: shown while this column is the
                                 // hovered one and its count reaches this depth.
                                 .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
@@ -92,13 +101,25 @@ public final class Pockets {
                                 // denies it by default (protectInReach in PocketsIp), so its
                                 // toggle is what actually turns shift-click-in on, and nothing
                                 // routes into a pocket at all without IP present. The server
-                                // holds to the pockets the client shows and allows
-                                // (PocketIntake), since Reach and the count live there.
+                                // holds to what Reach allows (PocketIntake), since Reach lives
+                                // on the client; the count it enforces itself.
                                 .shiftClickIn(FabricLoader.getInstance().isModLoaded("inventoryplus"))
                                 .collect(false)
                                 .dragFill(false));
             }
         }
+    }
+
+    /** How many pockets {@code hotbar} has live for {@code player}, on the player's side. */
+    public static int count(Player player, int hotbar) {
+        int c = 0;
+        while (c < MAX_PER_SLOT && GROUPS[flatIndex(hotbar, c)].activeCount(player) > 0) c++;
+        return c;
+    }
+
+    /** Server: makes depths {@code 0..count-1} of {@code hotbar} live and the rest inert. */
+    static void applyCount(ServerPlayer player, int hotbar, int count) {
+        for (int d = 0; d < MAX_PER_SLOT; d++) GROUPS[flatIndex(hotbar, d)].setActiveCount(player, d < count ? 1 : 0);
     }
 
     /** Flat index into the 27-stack attachment for (hotbar, depth). */

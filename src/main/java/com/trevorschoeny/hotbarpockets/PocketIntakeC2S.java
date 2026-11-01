@@ -7,9 +7,9 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Client-to-server report of which pockets may take a shift-click: bit
- * {@code flatIndex(hotbar, depth)} is set when that pocket is within the client's
- * count and the client's own rules (Inventory Plus's Reach) allow a shift-click
- * into it. Sent on every container screen and every count change; see
+ * {@code flatIndex(hotbar, depth)} is set when pockets are on and the client's own
+ * rules (Inventory Plus's Reach) allow a shift-click into that pocket. Whether the
+ * pocket exists the server knows itself. Sent on every container screen; see
  * {@link PocketIntake} for why the server needs it.
  */
 public record PocketIntakeC2S(int mask) implements CustomPacketPayload {

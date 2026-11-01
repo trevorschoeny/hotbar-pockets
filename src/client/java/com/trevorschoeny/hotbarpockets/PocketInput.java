@@ -88,7 +88,7 @@ public final class PocketInput {
         if (!PocketRing.rotationAllowed(mc.player.inventoryMenu, mc.player, hotbar, count,
                 PocketOperations.POCKET_CYCLE, PocketOperations.POCKET_CYCLE)) return;
         beforeRotate.accept(hotbar);
-        ClientPlayNetworking.send(new PocketRotateC2S(hotbar, count, forward,
+        ClientPlayNetworking.send(new PocketRotateC2S(hotbar, forward,
                 PocketOperations.POCKET_CYCLE.id(), PocketOperations.POCKET_CYCLE.id()));
         // Predict the rotation locally so the HUD animation is drawn against the
         // rotated arrangement. The server's rotation arrives a round trip later,

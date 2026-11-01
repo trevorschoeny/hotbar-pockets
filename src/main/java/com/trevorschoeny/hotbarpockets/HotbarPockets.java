@@ -28,12 +28,14 @@ public final class HotbarPockets implements ModInitializer {
         PocketOperations.define();
         // Inventory Max's saved pockets, elytra and totem, given back on join.
         InventoryMaxRecovery.register();
-        // Shift-clicks land only in the pockets the client reports.
+        // Counts live on the server; shift-clicks land only where Reach allows.
+        PocketCounts.register();
         PocketIntake.register();
 
         // Payload types are known on both sides, wherever the payload travels.
         PayloadTypeRegistry.serverboundPlay().register(PocketRotateC2S.TYPE, PocketRotateC2S.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(PocketEvictC2S.TYPE, PocketEvictC2S.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PocketCountC2S.TYPE, PocketCountC2S.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(PocketLegacyCountsC2S.TYPE, PocketLegacyCountsC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(PocketQuickMoveC2S.TYPE, PocketQuickMoveC2S.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(PocketIntakeC2S.TYPE, PocketIntakeC2S.CODEC);
 
@@ -47,14 +49,19 @@ public final class HotbarPockets implements ModInitializer {
             BehaviorKey<TriBool> put = PocketOperations.served(payload.put());
             if (take == null || put == null) return;
             server.execute(() -> PocketServerOps.rotate(
-                    sp, payload.hotbar(), payload.count(), payload.forward(), take, put));
+                    sp, payload.hotbar(), payload.forward(), take, put));
         });
-        ServerPlayNetworking.registerGlobalReceiver(PocketEvictC2S.TYPE, (payload, context) -> {
+        ServerPlayNetworking.registerGlobalReceiver(PocketCountC2S.TYPE, (payload, context) -> {
             ServerPlayer sp = context.player();
             MinecraftServer server = sp.level().getServer();
             if (server == null) return;
-            server.execute(() -> PocketServerOps.evict(
-                    sp, payload.hotbar(), payload.fromDepth(), payload.toDepth()));
+            server.execute(() -> PocketCounts.set(sp, payload.hotbar(), payload.count()));
+        });
+        ServerPlayNetworking.registerGlobalReceiver(PocketLegacyCountsC2S.TYPE, (payload, context) -> {
+            ServerPlayer sp = context.player();
+            MinecraftServer server = sp.level().getServer();
+            if (server == null) return;
+            server.execute(() -> PocketCounts.adopt(sp, payload.counts()));
         });
         ServerPlayNetworking.registerGlobalReceiver(PocketQuickMoveC2S.TYPE, (payload, context) -> {
             ServerPlayer sp = context.player();
