@@ -64,7 +64,8 @@ public final class PocketServerOps {
      * Quick-moves one pocket's contents to wherever a shift-click would send
      * them: the restock path for slots the player isn't holding. Runs the
      * authoritative {@code quickMoveStack} from the pocket's server-side slot
-     * (always active) and lets the existing routing move it: vanilla equips
+     * (live within the count; past it the slot is inert and empty, so nothing
+     * moves) and lets the existing routing move it: vanilla equips
      * armor to the matching empty armor slot, and SlotKit routes a totem or an
      * elytra to a slot mod's slot that asked for shift-clicks.
      * {@code broadcastChanges} syncs the result back to the client (whose pocket
