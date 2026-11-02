@@ -32,7 +32,7 @@ It has to be installed on the server as well as the client. In singleplayer, you
 ### Requirements
 
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-- [MenuKit](https://modrinth.com/mod/menukit) 7.4.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
+- [MenuKit](https://modrinth.com/mod/menukit) 7.5.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
 - [SlotKit](https://modrinth.com/mod/slotkit) 2.3.0 or newer, below 3.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
 
 ### Pairs well with
@@ -57,9 +57,9 @@ Open your inventory and hover a hotbar slot. Two small buttons appear just under
 - Click minus to remove the rightmost pocket. Its item goes into your inventory, or drops at your feet if there's no room.
 - Minus is grayed when the slot has no pockets, and plus is grayed when it has three.
 - The row stays open while your mouse is on the hotbar slot, its buttons, its pockets, or the space between them.
-- Pockets show in your inventory and in the creative inventory's Survival Inventory tab. They don't show while a chest or other container is open, and their items stay in them.
+- Pockets show on every container screen, not only your inventory, and the plus and minus buttons work there too.
 
-Each world, and each server, has its own number of pockets for each hotbar slot, and a new world starts with none. The number of pockets is saved on your computer. The items are saved with your player on the server.
+Each world, and each server, has its own number of pockets for each hotbar slot, and a new world starts with none. The number of pockets, and the items in them, are saved with your player on the server. If you're updating from an older version, a world's existing count carries over the first time you join it after updating.
 
 #### Using pockets
 
