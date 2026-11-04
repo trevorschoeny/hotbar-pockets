@@ -70,7 +70,9 @@ public final class PocketPixelPanels {
                                 PanelPosition.pixel(() -> PocketGeometry.pocketOrigin(hotbar, depth))
                                         .priority(POCKET_PRIORITY)))
                         .build()
-                        .visibleWhen(PocketsSettings::enabled);
+                        .visibleWhen(PocketsSettings::enabled)
+                        // Grows out of the arc and fades in as the row opens (PocketArcs).
+                        .transform(PocketArcs::rowTransform);
                 // Every container screen: pockets are ever-present. Where the menu has no
                 // pockets (a creative item tab) the origin is null and nothing draws.
                 new ScreenPanelAdapter(pocket, 0).onAny();
@@ -83,7 +85,8 @@ public final class PocketPixelPanels {
                 .style(PanelStyle.RAISED)
                 .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
                         .priority(POCKET_PRIORITY - 1)))
-                .build();
+                .build()
+                .transform(PocketArcs::rowTransform);
         new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onAny();
 
         Panel buttons = Panel.builder(HotbarPockets.MOD_ID + ":pocket_buttons")
@@ -105,7 +108,7 @@ public final class PocketPixelPanels {
     // The backing box's outer top-left: the row's first frame less the pad. Null unless
     // a column with at least one pocket is shown.
     private static ScreenOrigin backingOrigin() {
-        int rev = PocketHoverState.revealedHotbar();
+        int rev = PocketHoverState.shownHotbar();
         if (rev < 0) return null;
         int count = PocketHoverState.count(rev);
         if (count <= 0) return null;
@@ -131,7 +134,7 @@ public final class PocketPixelPanels {
         @Override public int getChildX() { return 0; }
         @Override public int getChildY() { return 0; }
         @Override public int getWidth() {
-            int rev = PocketHoverState.revealedHotbar();
+            int rev = PocketHoverState.shownHotbar();
             return rev < 0 ? 0 : PocketHoverState.count(rev) * Pockets.SLOT;
         }
         @Override public int getHeight() { return Pockets.SLOT; }

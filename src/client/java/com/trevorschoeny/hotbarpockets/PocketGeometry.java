@@ -34,7 +34,7 @@ public final class PocketGeometry {
      * within its count, and the open screen has the pockets and the hotbar slot.
      */
     static @Nullable ScreenOrigin pocketOrigin(int hotbar, int depth) {
-        if (PocketHoverState.revealedHotbar() != hotbar) return null;
+        if (PocketHoverState.shownHotbar() != hotbar) return null;
         int count = PocketHoverState.count(hotbar);
         if (depth >= count) return null;
         SlotScreenRect anchor = shownAnchor(hotbar);
