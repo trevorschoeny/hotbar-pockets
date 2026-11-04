@@ -1,5 +1,6 @@
 package com.trevorschoeny.hotbarpockets;
 
+import com.trevlar.menukit.api.element.Easing;
 import com.trevlar.menukit.api.hud.HudCycleStrip;
 import com.trevlar.slotkit.api.storage.Storage;
 
@@ -31,6 +32,18 @@ import java.util.function.BooleanSupplier;
  */
 public final class PocketStrip implements HudCycleStrip.Source {
 
+    /**
+     * How Pockets' arc looks and moves, on the HUD, on screens and in the hover slide
+     * (PocketArcs). Trev's values, 2026-11-04: icons at 2/5 size over a faint shadow of
+     * their own shape, one icon pixel down and right; 300 ms slides on MenuKit's spring.
+     * The resting points are MenuKit's.
+     */
+    public static final HudCycleStrip.Style STYLE = HudCycleStrip.Style.builder()
+            .iconScale(0.4f)
+            .shadow(true).shadowOffset(1f).shadowOpacity(0.375f).shadowFades(true)
+            .slide(300, Easing.SPRING)
+            .build();
+
     /** Pocket previews: the ring as an arc above every hotbar slot with pockets. */
     public static final PocketStrip ARC = new PocketStrip(HudCycleStrip.Axis.ARC, PocketsSettings::previews);
     /** The mini hotbar beside the held slot. */
@@ -48,6 +61,9 @@ public final class PocketStrip implements HudCycleStrip.Source {
 
     @Override
     public HudCycleStrip.Axis axis() { return axis; }
+
+    @Override
+    public HudCycleStrip.Style style() { return STYLE; }
 
     /** How long a predicted ring is shown; covers the rotation's round trip. */
     private static final long PREDICTION_WINDOW_MILLIS = 500L;

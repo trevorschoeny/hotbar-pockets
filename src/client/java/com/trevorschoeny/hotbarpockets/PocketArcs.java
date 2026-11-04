@@ -87,7 +87,7 @@ public final class PocketArcs {
 
     /** Whether a slide is running now. */
     private static boolean sliding() {
-        return slideColumn >= 0 && slideStart != null && !HudCycleStrip.slideDone(slideStart);
+        return slideColumn >= 0 && slideStart != null && !HudCycleStrip.slideDone(slideStart, PocketStrip.STYLE);
     }
 
     // A row slot's item hides while its column's row opens or closes; any other slot is left be.
@@ -155,7 +155,7 @@ public final class PocketArcs {
      * spring's bounce.
      */
     private static float rowness() {
-        float p = slideStart == null ? 1f : HudCycleStrip.slideProgress(slideStart);
+        float p = slideStart == null ? 1f : HudCycleStrip.slideProgress(slideStart, PocketStrip.STYLE);
         return opening ? p : 1f - p;
     }
 
@@ -185,7 +185,7 @@ public final class PocketArcs {
         int count = PocketState.count(n);
         if (mc.player == null || count < 1 || slideStart == null) return;
         float k = rowness();
-        List<ItemAnimation.Pose> arc = HudCycleStrip.arcPoints(count);
+        List<ItemAnimation.Pose> arc = PocketStrip.STYLE.points(count);
         Storage pockets = Pockets.POCKETS.bind(mc.player);
         float cx = slot.x() + 8, cy = slot.y() + 8;   // the hotbar item's center
         for (int d = 0; d < count; d++) {
@@ -195,8 +195,8 @@ public final class PocketArcs {
             float ax = cx + at.offsetX(), ay = cy + at.offsetY();
             // The row slot's 18 px frame is at rowX/rowY; its item's center is 9 in.
             float rx = PocketGeometry.rowX(slot, count, d) + 9, ry = PocketGeometry.rowY(slot) + 9;
-            HudCycleStrip.drawArcItem(g, stack, ax + (rx - ax) * k, ay + (ry - ay) * k,
-                    HudCycleStrip.ARC_SCALE + (1f - HudCycleStrip.ARC_SCALE) * k);
+            HudCycleStrip.drawArcItem(g, PocketStrip.STYLE, stack, ax + (rx - ax) * k, ay + (ry - ay) * k,
+                    PocketStrip.STYLE.iconScale() + (1f - PocketStrip.STYLE.iconScale()) * k);
         }
     }
 }
