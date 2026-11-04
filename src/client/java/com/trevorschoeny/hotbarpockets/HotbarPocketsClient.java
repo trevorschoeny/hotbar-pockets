@@ -23,8 +23,9 @@ public final class HotbarPocketsClient implements ClientModInitializer {
         // column shows, and the panels present the shown pockets and their chrome.
         PocketHover.register();
         PocketPixelPanels.register();
+        PocketArcs.register();
         PocketInput.register();
-        HudCycleStrip.register(PocketStrip.INSTANCE);
+        for (PocketStrip look : PocketStrip.ALL) HudCycleStrip.register(look);
         if (FabricLoader.getInstance().isModLoaded("inventoryplus")) PocketsIp.register();
     }
 }

@@ -1,7 +1,6 @@
 package com.trevorschoeny.hotbarpockets.ip;
 
 import com.trevorschoeny.hotbarpockets.HotbarPockets;
-import com.trevorschoeny.hotbarpockets.PocketHudMode;
 import com.trevorschoeny.hotbarpockets.PocketKeys;
 import com.trevorschoeny.hotbarpockets.PocketsSettings;
 
@@ -10,7 +9,6 @@ import com.trevorschoeny.inventoryplus.api.InventoryPlusApi;
 import com.trevlar.menukit.api.element.Button;
 import com.trevlar.menukit.api.element.Checkbox;
 import com.trevlar.menukit.api.element.Divider;
-import com.trevlar.menukit.api.element.Dropdown;
 import com.trevlar.menukit.api.element.Flow;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.Tabs;
@@ -28,12 +26,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * The Pockets tab in Inventory Plus's settings menu, Inventory Max's pockets tab
@@ -79,9 +74,8 @@ final class PocketsSettingsTab {
                         + "Hover a hotbar slot in your inventory to add them.",
                         PocketsSettings::enabled, PocketsSettings::setEnabled, PocketsSettingsTab::reset)
                 .checkbox("Show the Pockets button", PocketsSettings::showButton, PocketsSettings::setShowButton)
-                .choice("Beside the hotbar", Arrays.asList(PocketHudMode.values()),
-                        m -> m == PocketHudMode.NONE ? "Off" : "Mini hotbar",
-                        PocketsSettings::hud, PocketsSettings::setHud)
+                .checkbox("Pocket previews", PocketsSettings::previews, PocketsSettings::setPreviews)
+                .checkbox("Mini hotbar", PocketsSettings::miniHotbar, PocketsSettings::setMiniHotbar)
                 .heading("Cycling")
                 .key(PocketKeys.CYCLE_FORWARD)
                 .key(PocketKeys.CYCLE_BACKWARD)
@@ -164,16 +158,6 @@ final class PocketsSettingsTab {
         Body key(KeyMapping key) {
             label(Component.translatable(key.getName()));
             out.add(ChordButton.builder(key).at(0, y).disabledWhen(off()).build());
-            y += 20;
-            return this;
-        }
-
-        /** A setting with a few named values. */
-        <T> Body choice(String label, List<T> values, Function<T, String> name, Supplier<T> get, Consumer<T> set) {
-            label(Component.literal(label));
-            out.add(Dropdown.<T>builder().at(0, y).size(110, 16).items(values)
-                    .label(v -> Component.literal(name.apply(v)))
-                    .state(get, set).disabledWhen(off()).build());
             y += 20;
             return this;
         }

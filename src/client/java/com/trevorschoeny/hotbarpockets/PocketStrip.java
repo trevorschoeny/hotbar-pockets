@@ -10,11 +10,13 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 /**
- * The pockets' ring on MenuKit's cycle strip, the mini hotbar beside the held slot. A
- * row: the held stack, then pocket 0, 1, 2, which is the order a forward turn brings
- * them to the hand ({@link PocketServerOps#rotate}).
+ * The pockets' ring on MenuKit's cycle strip, in two looks: the arc above every hotbar
+ * slot (pocket previews) and the mini hotbar beside the held slot. The ring is the held
+ * stack, then pocket 0, 1, 2, which is the order a forward turn brings them to the hand
+ * ({@link PocketServerOps#rotate}).
  *
  * <h3>Reading the contents</h3>
  * The items come straight from the player's pocket attachment on the client. In the
@@ -29,9 +31,23 @@ import java.util.List;
  */
 public final class PocketStrip implements HudCycleStrip.Source {
 
-    public static final PocketStrip INSTANCE = new PocketStrip();
+    /** Pocket previews: the ring as an arc above every hotbar slot with pockets. */
+    public static final PocketStrip ARC = new PocketStrip(HudCycleStrip.Axis.ARC, PocketsSettings::previews);
+    /** The mini hotbar beside the held slot. */
+    public static final PocketStrip ROW = new PocketStrip(HudCycleStrip.Axis.ROW, PocketsSettings::miniHotbar);
+    /** Both looks; each draws only while its own setting is on, and a turn slides both. */
+    public static final List<PocketStrip> ALL = List.of(ARC, ROW);
 
-    private PocketStrip() {}
+    private final HudCycleStrip.Axis axis;
+    private final BooleanSupplier on;
+
+    private PocketStrip(HudCycleStrip.Axis axis, BooleanSupplier on) {
+        this.axis = axis;
+        this.on = on;
+    }
+
+    @Override
+    public HudCycleStrip.Axis axis() { return axis; }
 
     /** How long a predicted ring is shown; covers the rotation's round trip. */
     private static final long PREDICTION_WINDOW_MILLIS = 500L;
@@ -41,7 +57,7 @@ public final class PocketStrip implements HudCycleStrip.Source {
 
     @Override
     public HudCycleStrip.@Nullable View viewFor(int hotbarSlot) {
-        if (!PocketsSettings.enabled() || PocketsSettings.hud() != PocketHudMode.MINI_HOTBAR) return null;
+        if (!PocketsSettings.enabled() || !on.getAsBoolean()) return null;
         if (predictedRing != null && predictedHotbar == hotbarSlot
                 && System.currentTimeMillis() < predictedUntil) {
             return new HudCycleStrip.View(predictedRing, 0);

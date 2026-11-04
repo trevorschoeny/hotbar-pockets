@@ -74,8 +74,8 @@ public final class PocketInput {
         if (back) cycle(selected, false);
     }
 
-    /** Sends a rotation request for {@code hotbar} and starts the HUD animation. */
-    private static void cycle(int hotbar, boolean forward) {
+    /** Sends a rotation request for {@code hotbar} and starts the HUD animation. Package-private for the preview shots. */
+    static void cycle(int hotbar, boolean forward) {
         if (!PocketsSettings.enabled()) return;
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
         int count = PocketState.count(hotbar);
@@ -94,7 +94,7 @@ public final class PocketInput {
         // rotated arrangement. The server's rotation arrives a round trip later,
         // and without this the animation desyncs.
         PocketStrip.predict(hotbar, forward);
-        HudCycleStrip.slide(PocketStrip.INSTANCE, hotbar,
+        for (PocketStrip look : PocketStrip.ALL) HudCycleStrip.slide(look, hotbar,
                 forward ? HudCycleStrip.Direction.FORWARD : HudCycleStrip.Direction.BACKWARD);
     }
 }

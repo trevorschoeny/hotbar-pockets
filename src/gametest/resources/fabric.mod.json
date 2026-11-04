@@ -6,7 +6,8 @@
   "entrypoints": {
     "fabric-client-gametest": [
       "com.trevorschoeny.hotbarpockets.ModeChecks",
-      "com.trevorschoeny.hotbarpockets.CountChecks"
+      "com.trevorschoeny.hotbarpockets.CountChecks",
+      "com.trevorschoeny.hotbarpockets.PreviewShots"
     ]
   }
 }

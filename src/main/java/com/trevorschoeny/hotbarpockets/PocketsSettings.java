@@ -32,28 +32,35 @@ public final class PocketsSettings {
 
     // The defaults, named once so load and reset agree.
     private static final boolean DEFAULT_ENABLED = true;
-    private static final PocketHudMode DEFAULT_HUD = PocketHudMode.MINI_HOTBAR;
+    private static final boolean DEFAULT_PREVIEWS = true;
+    private static final boolean DEFAULT_MINI_HOTBAR = false;
     private static final boolean DEFAULT_SHOW_BUTTON = false;
 
     // Off hides every pocket and stops the keys; the items stay in their pockets.
     private static volatile boolean enabled = DEFAULT_ENABLED;
-    // Beside the hotbar: the mini hotbar (MenuKit's cycle strip) or nothing.
-    private static volatile PocketHudMode hud = DEFAULT_HUD;
+    // Pocket previews: each hotbar slot's pockets as small icons in an arc above it, on
+    // the HUD and on screens (MenuKit's cycle strip, arc axis).
+    private static volatile boolean previews = DEFAULT_PREVIEWS;
+    // The mini hotbar beside the held slot (MenuKit's cycle strip, row axis).
+    private static volatile boolean miniHotbar = DEFAULT_MINI_HOTBAR;
     // Inventory Plus's column switch for this mod. Hidden by default.
     private static volatile boolean showButton = DEFAULT_SHOW_BUTTON;
 
     public static boolean enabled()     { return enabled; }
-    public static PocketHudMode hud()   { return hud; }
+    public static boolean previews()    { return previews; }
+    public static boolean miniHotbar()  { return miniHotbar; }
     public static boolean showButton()  { return showButton; }
 
     public static void setEnabled(boolean v)       { enabled = v; save(); }
-    public static void setHud(PocketHudMode v)     { hud = v; save(); }
+    public static void setPreviews(boolean v)      { previews = v; save(); }
+    public static void setMiniHotbar(boolean v)    { miniHotbar = v; save(); }
     public static void setShowButton(boolean v)    { showButton = v; save(); }
 
     /** Every setting back to its default, and saves: Reset to Defaults and IP's Reset everything. */
     public static void reset() {
         enabled = DEFAULT_ENABLED;
-        hud = DEFAULT_HUD;
+        previews = DEFAULT_PREVIEWS;
+        miniHotbar = DEFAULT_MINI_HOTBAR;
         showButton = DEFAULT_SHOW_BUTTON;
         save();
     }
@@ -73,12 +80,10 @@ public final class PocketsSettings {
             JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             if (root.has("enabled")) enabled = root.get("enabled").getAsBoolean();
             if (root.has("showButton")) showButton = root.get("showButton").getAsBoolean();
-            if (root.has("hud")) {
-                // An unknown name (hand-edited, or from a later version) keeps the default.
-                try {
-                    hud = PocketHudMode.valueOf(root.get("hud").getAsString());
-                } catch (IllegalArgumentException ignored) {}
-            }
+            if (root.has("previews")) previews = root.get("previews").getAsBoolean();
+            if (root.has("miniHotbar")) miniHotbar = root.get("miniHotbar").getAsBoolean();
+            // ponytail: the old "hud" choice (MINI_HOTBAR or NONE) is ignored, so everyone
+            // starts on the new defaults; map it if players ask for their old HUD back.
         } catch (IOException | JsonSyntaxException | IllegalStateException | ClassCastException
                  | UnsupportedOperationException ex) {
             HotbarPockets.LOGGER.error("[hotbarpockets] failed to read {}, using defaults", path, ex);
@@ -91,7 +96,8 @@ public final class PocketsSettings {
             Files.createDirectories(path.getParent());
             JsonObject root = new JsonObject();
             root.addProperty("enabled", enabled);
-            root.addProperty("hud", hud.name());
+            root.addProperty("previews", previews);
+            root.addProperty("miniHotbar", miniHotbar);
             root.addProperty("showButton", showButton);
             Files.writeString(path, GSON.toJson(root));
         } catch (IOException ex) {

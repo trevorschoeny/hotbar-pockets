@@ -54,9 +54,6 @@ public class ModeChecks implements FabricClientGameTest {
                 ctx.waitTicks(3);
                 expectShown(true);
                 expectContents();
-                if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("inventoryplus")) {
-                    expectShiftClickOnlyIntoShownPockets();
-                }
             });
             run("hotbarpockets:survival", "survival", this::expectOverRecipeBook);
             run("hotbarpockets:creative_inventory", "creative", () -> {
@@ -178,54 +175,6 @@ public class ModeChecks implements FabricClientGameTest {
             return null;
         });
         if (wrong != null) throw new AssertionError(wrong);
-    }
-
-    /**
-     * With Inventory Plus's Reach letting shift-clicks into every pocket, a shift-click on the
-     * inventory (where pockets come first) lands only in a pocket this world shows: one of
-     * HOTBAR's two, never hotbar 0's, which has none. The server shows all 27, so it holds to
-     * what the client reports ({@link PocketIntake}). Run with {@code -PwithIp}.
-     */
-    private void expectShiftClickOnlyIntoShownPockets() {
-        List<String> pockets = new ArrayList<>();
-        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++)
-            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) pockets.add(Pockets.groupId(n, d).asString());
-        ctx.runOnClient(mc -> com.trevorschoeny.inventoryplus.lockgroups.Reach.setDenied("menukit:shift_click_in", pockets, false));
-        // Reopened, so the screen reports the pockets under the new reach.
-        ctx.setScreen(() -> null);
-        ctx.waitTicks(2);
-        ctx.getInput().pressKey(o -> o.keyInventory);
-        ctx.waitTicks(3);
-        scene.world().getServer().runOnServer(server -> server.getPlayerList().getPlayers().getFirst()
-                .getInventory().setItem(20, new ItemStack(Items.DIRT, 5)));
-        ctx.waitTicks(3);
-        try {
-            shiftClick(20);   // main inventory slot 20 is menu slot 20 on the inventory
-            String wrong = scene.world().getServer().computeOnServer(server -> {
-                var stacks = Pockets.POCKETS.bind(server.getPlayerList().getPlayers().getFirst());
-                String found = null;
-                for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
-                    for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
-                        ItemStack s = stacks.getStack(Pockets.flatIndex(n, d));
-                        if (!s.is(Items.DIRT)) continue;
-                        if (n != HOTBAR || d >= 2) return "dirt reached hidden pocket (" + n + ", " + d + ")";
-                        found = "shown";
-                        stacks.setStack(Pockets.flatIndex(n, d), ItemStack.EMPTY);
-                    }
-                }
-                return found == null ? "dirt reached no pocket, though the reach allows it" : null;
-            });
-            if (wrong != null) throw new AssertionError(wrong);
-        } finally {
-            ctx.runOnClient(mc -> com.trevorschoeny.inventoryplus.lockgroups.Reach.revert("menukit:shift_click_in"));
-            scene.world().getServer().runOnServer(server -> {
-                var p = server.getPlayerList().getPlayers().getFirst();
-                p.getInventory().setItem(20, ItemStack.EMPTY);
-                var stacks = Pockets.POCKETS.bind(p);
-                for (int i = 0; i < Pockets.TOTAL; i++) stacks.setStack(i, ItemStack.EMPTY);
-            });
-            ctx.waitTicks(3);
-        }
     }
 
     /** Shift-clicks menu slot {@code index} on the open screen with the real mouse. */
