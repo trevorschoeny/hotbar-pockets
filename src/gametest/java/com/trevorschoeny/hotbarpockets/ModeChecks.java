@@ -58,6 +58,7 @@ public class ModeChecks implements FabricClientGameTest {
                     expectShiftClickOnlyIntoShownPockets();
                 }
             });
+            run("hotbarpockets:survival", "survival", this::expectOverRecipeBook);
             run("hotbarpockets:creative_inventory", "creative", () -> {
                 openCreativeTab(CreativeModeTab.Type.INVENTORY);
                 expectShown(true);
@@ -88,16 +89,19 @@ public class ModeChecks implements FabricClientGameTest {
         if (!failures.isEmpty()) throw new AssertionError("pocket mode checks failed:\n- " + String.join("\n- ", failures));
     }
 
-    /** Steps HOTBAR's count to {@code want} with + and -, waiting for the server's answer each time. */
-    private void setCount(int want) {
+    /** Steps HOTBAR's count to {@code want}. */
+    private void setCount(int want) { setCount(HOTBAR, want); }
+
+    /** Steps {@code hotbar}'s count to {@code want} with + and -, waiting for the server's answer each time. */
+    private void setCount(int hotbar, int want) {
         for (int i = 0; i < Pockets.MAX_PER_SLOT; i++) {
-            int c = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
+            int c = ctx.computeOnClient(mc -> PocketState.count(hotbar));
             if (c == want) return;
-            ctx.runOnClient(mc -> { if (c < want) PocketState.grow(HOTBAR); else PocketState.shrink(HOTBAR); });
+            ctx.runOnClient(mc -> { if (c < want) PocketState.grow(hotbar); else PocketState.shrink(hotbar); });
             ctx.waitTicks(3);
         }
-        int c = ctx.computeOnClient(mc -> PocketState.count(HOTBAR));
-        if (c != want) throw new AssertionError("couldn't set slot " + HOTBAR + "'s pockets to " + want + ", the server says " + c);
+        int c = ctx.computeOnClient(mc -> PocketState.count(hotbar));
+        if (c != want) throw new AssertionError("couldn't set slot " + hotbar + "'s pockets to " + want + ", the server says " + c);
     }
 
     /** Runs one station's check in {@code mode}, recording a failure instead of stopping. */
@@ -247,8 +251,67 @@ public class ModeChecks implements FabricClientGameTest {
     private void click(double[] at) {
         ctx.getInput().setCursorPos(at[0], at[1]);
         ctx.waitTicks(2);
-        ctx.getInput().pressMouse(0);   // GLFW left button
+        ctx.getInput().pressMouse(com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT);   // SDL numbering in 26.x
         ctx.waitTicks(3);
+    }
+
+    /**
+     * With the recipe book open, the pockets of hotbar slot 1 reach left over the book. They
+     * draw over it and a click on one lands on the pocket, not the book (MenuKit 7.6.0).
+     */
+    private void expectOverRecipeBook() {
+        final int hotbar = 0, count = 3;
+        setCount(hotbar, count);
+        try {
+            ctx.getInput().pressKey(o -> o.keyInventory);
+            ctx.waitTicks(3);
+            // MK.setRecipeBookOpen shows the book but leaves the frame where it was; the
+            // setting is remembered, so reopen the inventory and vanilla lays it out as the
+            // recipe button does.
+            ctx.runOnClient(mc -> com.trevlar.menukit.api.MK.setRecipeBookOpen(true));
+            ctx.setScreen(() -> null);
+            ctx.waitTicks(2);
+            ctx.getInput().pressKey(o -> o.keyInventory);
+            ctx.waitTicks(3);
+            double[] at = ctx.computeOnClient(mc -> {
+                SlotScreenRect r = PocketGeometry.hotbar(screen(mc), hotbar);
+                double f = (double) mc.getWindow().getScreenWidth() / mc.getWindow().getGuiScaledWidth();
+                return new double[]{ (r.x() + 8) * f, (r.y() + 8) * f, f, r.frameX() - 7 };
+            });
+            ctx.getInput().setCursorPos(at[0], at[1]);
+            ctx.waitTicks(3);
+            // The leftmost pocket that sits left of the inventory frame, over the book.
+            int[] over = ctx.computeOnClient(mc -> {
+                if (!com.trevlar.menukit.api.MK.isRecipeBookOpen()) throw new AssertionError("the recipe book didn't open");
+                for (int d = 0; d < count; d++) {
+                    var o = PocketGeometry.pocketOrigin(hotbar, d);
+                    if (o != null && o.x() + 9 < at[3]) return new int[]{ d, o.x() + 9, o.y() + 9 };
+                }
+                return null;
+            });
+            if (over == null) throw new AssertionError("no pocket of hotbar slot 1 reaches over the recipe book; nothing to check");
+            scene.world().getServer().runOnServer(server -> Pockets.POCKETS
+                    .bind(server.getPlayerList().getPlayers().getFirst())
+                    .setStack(Pockets.flatIndex(hotbar, over[0]), new ItemStack(Items.DIAMOND, 5)));
+            ctx.waitTicks(5);
+            // Walk the cursor across the gap to the pocket, as a player does, so the row stays.
+            ctx.getInput().setCursorPos(over[1] * at[2], at[1] - 12 * at[2]);
+            ctx.waitTicks(2);
+            ctx.getInput().setCursorPos(over[1] * at[2], over[2] * at[2]);
+            ctx.waitTicks(3);
+            ctx.takeScreenshot("pockets-check-recipe_book");
+            click(new double[]{ over[1] * at[2], over[2] * at[2] });
+            ctx.waitTicks(5);
+            String carried = ctx.computeOnClient(mc -> mc.player.containerMenu.getCarried().toString());
+            if (!carried.startsWith("5 minecraft:diamond"))
+                throw new AssertionError("a click on pocket " + over[0] + " over the recipe book picked up " + carried + ", not its diamonds");
+        } finally {
+            ctx.runOnClient(mc -> com.trevlar.menukit.api.MK.setRecipeBookOpen(false));
+            ctx.setScreen(() -> null);
+            ctx.waitTicks(3);
+            setCount(hotbar, 0);
+            command("clear @p minecraft:diamond");
+        }
     }
 
     /** Writes pocket (HOTBAR, 0) on the server, then gives the sync a few ticks. */
