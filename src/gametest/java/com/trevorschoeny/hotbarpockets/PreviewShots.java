@@ -31,8 +31,8 @@ public class PreviewShots implements FabricClientGameTest {
     private static final long SLOW = 10;
     /** Phase-shifted runs per animation: 3 gives a frame every 16.7 ms. */
     private static final int PASSES = 3;
-    /** Frames per run, 50 ms apart: the 300 ms slide (PocketStrip.STYLE) and a little rest after. */
-    private static final int FRAMES_PER_PASS = 8;
+    /** Frames per run, 50 ms apart: the 450 ms slide (PocketStrip.STYLE) and a little rest after. */
+    private static final int FRAMES_PER_PASS = 10;
 
     private ClientGameTestContext ctx;
     private SceneWorld.Opened scene;
@@ -53,12 +53,24 @@ public class PreviewShots implements FabricClientGameTest {
 
             // The HUD: arcs over slots 1 to 4, then a forward turn on the held slot 2.
             ctx.takeScreenshot("previews-hud-rest");
-            // A turn's slide starts inside the turn, so the shifted clock wraps the turn itself.
-            capture("previews-hud-turn", () -> {}, () -> PocketInput.cycle(1, true), () -> {
+            // Slot 1's three pockets turning forward twice, then back twice: one capture per
+            // turn, each then made for real so the next starts where it ended. A turn's slide
+            // starts inside the turn, so the shifted clock wraps the turn itself.
+            ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(0));
+            ctx.waitTicks(5);
+            boolean[] turns = { true, true, false, false };
+            for (int i = 0; i < turns.length; i++) {
+                boolean forward = turns[i];
+                capture("previews-hud-turns-" + i, () -> {}, () -> PocketInput.cycle(0, forward), () -> {
+                    ctx.waitTicks(10);
+                    ctx.runOnClient(mc -> PocketInput.cycle(0, !forward));
+                    ctx.waitTicks(10);
+                });
+                ctx.runOnClient(mc -> PocketInput.cycle(0, forward));
                 ctx.waitTicks(10);
-                ctx.runOnClient(mc -> PocketInput.cycle(1, false));
-                ctx.waitTicks(10);
-            });
+            }
+            ctx.runOnClient(mc -> mc.player.getInventory().setSelectedSlot(1));
+            ctx.waitTicks(5);
 
             // The inventory: every slot's arc, then hovering slot 1 opens its row and leaving closes it.
             ctx.getInput().pressKey(o -> o.keyInventory);
