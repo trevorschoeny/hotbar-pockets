@@ -1,6 +1,5 @@
 package com.trevorschoeny.hotbarpockets;
 
-import com.trevlar.menukit.api.element.Easing;
 import com.trevlar.menukit.api.hud.HudCycleStrip;
 import com.trevlar.slotkit.api.storage.Storage;
 
@@ -35,14 +34,40 @@ public final class PocketStrip implements HudCycleStrip.Source {
     /**
      * How Pockets' arc looks and moves, on the HUD, on screens and in the hover slide
      * (PocketArcs). Trev's values, 2026-11-04: icons at 2/5 size over a faint shadow of
-     * their own shape, one icon pixel down and right; 300 ms slides on MenuKit's spring.
+     * their own shape, one icon pixel down and right; 300 ms slides on {@link #slideCurve}.
      * The resting points are MenuKit's.
      */
     public static final HudCycleStrip.Style STYLE = HudCycleStrip.Style.builder()
             .iconScale(0.4f)
             .shadow(true).shadowOffset(1f).shadowOpacity(0.375f).shadowFades(true)
-            .slide(300, Easing.SPRING)
+            .slide(300, PocketStrip::slideCurve)
             .build();
+
+    /**
+     * The slide's curve: a damped spring's step response (damping 0.6, peaking at 0.6 of
+     * the way). It starts gently, travels most of the distance by 0.4, overshoots about
+     * 9% at 0.6 and settles by 1. Trev wanted the items to visibly slide, then bounce a
+     * little; MenuKit's SPRING covers most of the distance in the first sixth, which read
+     * as a pop. The last term takes the spring's leftover at 1 out linearly, so it ends
+     * at exactly 1.
+     * ponytail: tuned by eye from clips; move into MenuKit as Easing.spring(damping, peak)
+     * if another mod wants the same feel.
+     */
+    private static float slideCurve(float t) {
+        if (t <= 0f) return 0f;
+        if (t >= 1f) return 1f;
+        return (float) (1.0 - springRest(t) + springRest(1.0) * t);
+    }
+
+    private static final double DAMPING = 0.6, PEAK_AT = 0.6;
+    private static final double DAMPED_FREQ = Math.PI / PEAK_AT;
+    private static final double DECAY = DAMPING * DAMPED_FREQ / Math.sqrt(1 - DAMPING * DAMPING);
+    private static final double SINE_WEIGHT = DAMPING / Math.sqrt(1 - DAMPING * DAMPING);
+
+    // How far the spring still is from rest at t, in the units of the whole move.
+    private static double springRest(double t) {
+        return Math.exp(-DECAY * t) * (Math.cos(DAMPED_FREQ * t) + SINE_WEIGHT * Math.sin(DAMPED_FREQ * t));
+    }
 
     /** Pocket previews: the ring as an arc above every hotbar slot with pockets. */
     public static final PocketStrip ARC = new PocketStrip(HudCycleStrip.Axis.ARC, PocketsSettings::previews);
