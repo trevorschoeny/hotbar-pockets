@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Not a check: frame sequences of pocket previews for Trev to watch, the HUD arcs turning
+ * Not a check: frame sequences of pocket previews to watch by eye, the HUD arcs turning
  * and the inventory's hover slide. Runs only when {@code /tmp/hotbarpockets-shots} exists,
  * so ordinary check runs skip it.
  *

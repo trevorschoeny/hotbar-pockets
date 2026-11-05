@@ -57,7 +57,8 @@ public final class PocketArcs {
 
     /**
      * How big the row's panels start when growing out of the arc.
-     * ponytail: one value, about an arc's width over a three-pocket row; per-count if 1 looks off.
+     * One value, about an arc's width over a three-pocket row; make it per-count if a
+     * single pocket looks off.
      */
     private static final float ROW_START_SCALE = 0.3f;
 

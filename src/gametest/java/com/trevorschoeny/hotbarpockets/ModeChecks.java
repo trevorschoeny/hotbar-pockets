@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class ModeChecks implements FabricClientGameTest {
 
-    /** The hotbar slot the scene has Trev hover (slot 2 in the labels, index 1). */
+    /** The hotbar slot the scene has the player hover (slot 2 in the labels, index 1). */
     private static final int HOTBAR = 1;
 
     private ClientGameTestContext ctx;
@@ -45,7 +45,7 @@ public class ModeChecks implements FabricClientGameTest {
         this.ctx = ctx;
         try (SceneWorld.Opened scene = SceneWorld.open(ctx, "hotbar-pockets", "modes")) {
             this.scene = scene;
-            // Two pockets behind the hovered slot, as the scene's first station has Trev add.
+            // Two pockets behind the hovered slot, as the scene's first station has the player add.
             setCount(2);
             run("hotbarpockets:survival", "survival", () -> {
                 // Filled in the world, with no screen open, as a pickup or a restock does.
@@ -335,7 +335,7 @@ public class ModeChecks implements FabricClientGameTest {
     /** Steps up to the chest at (x, y, z) and opens it, as a right-click on its north face does. */
     private void openChest(int x, int y, int z) {
         BlockPos pos = new BlockPos(x, y, z);
-        command("tp @p " + (x + 0.5) + " " + y + " " + (z - 1.5));   // within reach; Trev stands 8 back
+        command("tp @p " + (x + 0.5) + " " + y + " " + (z - 1.5));   // within reach; the player stands 8 back
         ctx.runOnClient(mc -> mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(pos), Direction.NORTH, pos, false)));
         ctx.waitTicks(5);

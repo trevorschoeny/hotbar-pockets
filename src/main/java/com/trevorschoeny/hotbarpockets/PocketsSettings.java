@@ -83,7 +83,7 @@ public final class PocketsSettings {
             if (root.has("previews")) previews = root.get("previews").getAsBoolean();
             if (root.has("miniHotbar")) miniHotbar = root.get("miniHotbar").getAsBoolean();
             // The old "hud" choice (MINI_HOTBAR or NONE) is ignored on purpose: everyone
-            // moves to the new defaults, previews on and the mini hotbar off (Trev, 2026-11-05).
+            // moves to the new defaults, previews on and the mini hotbar off.
         } catch (IOException | JsonSyntaxException | IllegalStateException | ClassCastException
                  | UnsupportedOperationException ex) {
             HotbarPockets.LOGGER.error("[hotbarpockets] failed to read {}, using defaults", path, ex);

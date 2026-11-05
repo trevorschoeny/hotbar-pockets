@@ -95,7 +95,7 @@ public final class Pockets {
                                 .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
                                 // Pockets take no part in vanilla's bulk moves: a shift-click,
                                 // a double-click or a drag never pours into or pulls from one,
-                                // with or without Inventory Plus (Trev, 2026-11-05). Shift-click
+                                // with or without Inventory Plus. Shift-click
                                 // out always works, so a pocket can be emptied quickly.
                                 .shiftClickIn(false)
                                 .collect(false)

@@ -51,11 +51,11 @@ public final class PocketStrip implements HudCycleStrip.Source {
     }
 
     /**
-     * A turn on the HUD (Trev, 2026-11-05): the hover's snappy bounce with a ramp-up off
+     * A turn on the HUD: the hover's snappy bounce with a ramp-up off
      * the key (ramp 0.4, then 0.6, then 0.8, each slowing the travel a little). Most of the
      * way by 0.35, about 5% over at 0.45, settled by about 0.7.
-     * ponytail: tuned by eye from clips; move spring() into MenuKit as an Easing if
-     * another mod wants the same feel.
+     * Tuned by eye from clips. If another mod wants the same feel, spring() could move
+     * into MenuKit as an Easing.
      */
     private static final Easing TURN_CURVE = spring(6.5, 2.2 * Math.PI, 0.8);
 
@@ -67,7 +67,7 @@ public final class PocketStrip implements HudCycleStrip.Source {
 
     /**
      * How Pockets' arc looks and moves, on the HUD, on screens and in the hover slide
-     * (PocketArcs). Trev's values, 2026-11-04: icons at 2/5 size over a faint shadow of
+     * (PocketArcs): icons at 2/5 size over a faint shadow of
      * their own shape, one icon pixel down and right; 333 ms turns on {@link #TURN_CURVE}.
      * The resting points are MenuKit's.
      */
@@ -79,7 +79,7 @@ public final class PocketStrip implements HudCycleStrip.Source {
 
     /**
      * The hover slide's timing (PocketArcs): the arc's look, on the same curve, 70% quicker
-     * than a turn (333 / 1.7, Trev, 2026-11-05).
+     * than a turn (333 / 1.7).
      */
     public static final HudCycleStrip.Style HOVER_STYLE = STYLE.toBuilder()
             .slide(196, HOVER_CURVE)
