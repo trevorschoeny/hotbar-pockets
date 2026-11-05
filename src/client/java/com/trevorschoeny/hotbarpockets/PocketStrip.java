@@ -1,5 +1,6 @@
 package com.trevorschoeny.hotbarpockets;
 
+import com.trevlar.menukit.api.element.Easing;
 import com.trevlar.menukit.api.hud.HudCycleStrip;
 import com.trevlar.slotkit.api.storage.Storage;
 
@@ -36,15 +37,44 @@ import java.util.function.BooleanSupplier;
 public final class PocketStrip implements HudCycleStrip.Source {
 
     /**
+     * A spring for a slide: {@code 1 - e^(-decay t) (cos(freq t) + k sin(freq t))}, with
+     * {@code k = ramp * decay / freq}. Ramp 0 lets the spring go at full speed; ramp 1 starts
+     * it from rest (a plain step response); between, a short ramp-up. Decay sets how fast the
+     * bounce dies, freq how quickly it swings. The last term takes what's left at 1 out
+     * linearly, so it ends at exactly 1.
+     */
+    private static Easing spring(double decay, double freq, double ramp) {
+        double k = ramp * decay / freq;
+        java.util.function.DoubleUnaryOperator rest = t -> Math.exp(-decay * t) * (Math.cos(freq * t) + k * Math.sin(freq * t));
+        double leftover = rest.applyAsDouble(1.0);
+        return t -> t <= 0f ? 0f : t >= 1f ? 1f : (float) (1.0 - rest.applyAsDouble(t) + leftover * t);
+    }
+
+    /**
+     * A turn on the HUD (Trev, 2026-11-05): a small ramp-up, most of the way by 0.4,
+     * overshooting about 7% at 0.55 and easing back through the rest, a longer bounce than
+     * the hover's. Half the distance in the first 15% of the slide.
+     * ponytail: tuned by eye from clips; move spring() into MenuKit as an Easing if
+     * another mod wants the same feel.
+     */
+    private static final Easing TURN_CURVE = spring(4.5, 1.6 * Math.PI, 0.4);
+
+    /**
+     * The hover slide: let go at full speed, a third of the way in the first twentieth,
+     * overshooting about 8% at 0.35 and settled by about 0.65. Snappy, for opening a row.
+     */
+    private static final Easing HOVER_CURVE = spring(6.5, 2.2 * Math.PI, 0);
+
+    /**
      * How Pockets' arc looks and moves, on the HUD, on screens and in the hover slide
      * (PocketArcs). Trev's values, 2026-11-04: icons at 2/5 size over a faint shadow of
-     * their own shape, one icon pixel down and right; 333 ms slides on {@link #slideCurve}.
+     * their own shape, one icon pixel down and right; 333 ms turns on {@link #TURN_CURVE}.
      * The resting points are MenuKit's.
      */
     public static final HudCycleStrip.Style STYLE = HudCycleStrip.Style.builder()
             .iconScale(0.4f)
             .shadow(true).shadowOffset(1f).shadowOpacity(0.375f).shadowFades(true)
-            .slide(333, PocketStrip::slideCurve)
+            .slide(333, TURN_CURVE)
             .build();
 
     /**
@@ -52,31 +82,9 @@ public final class PocketStrip implements HudCycleStrip.Source {
      * than a turn (333 / 1.7, Trev, 2026-11-05).
      */
     public static final HudCycleStrip.Style HOVER_STYLE = STYLE.toBuilder()
-            .slide(196, PocketStrip::slideCurve)
+            .slide(196, HOVER_CURVE)
             .build();
 
-    /**
-     * The slide's curve: a spring let go at full speed, {@code 1 - e^(-6.5t) cos(2.2πt)}. It
-     * leaves at once (a third of the way in the first twentieth), so a key press answers
-     * immediately, overshoots about 8% at 0.35 and settles by about 0.65. Trev, 2026-11-05:
-     * the items should visibly slide, bounce a little and feel responsive. MenuKit's SPRING
-     * covered most of the distance in a pop; a gently starting spring felt slow off the key.
-     * The last term takes the spring's leftover at 1 out linearly, so it ends at exactly 1.
-     * ponytail: tuned by eye from clips; move into MenuKit as an Easing if another mod
-     * wants the same feel.
-     */
-    private static float slideCurve(float t) {
-        if (t <= 0f) return 0f;
-        if (t >= 1f) return 1f;
-        return (float) (1.0 - springRest(t) + springRest(1.0) * t);
-    }
-
-    private static final double DECAY = 6.5, FREQ = 2.2 * Math.PI;
-
-    // How far the spring still is from rest at t, in the units of the whole move.
-    private static double springRest(double t) {
-        return Math.exp(-DECAY * t) * Math.cos(FREQ * t);
-    }
 
     /** Pocket previews: the ring as an arc above every hotbar slot with pockets. */
     public static final PocketStrip ARC = new PocketStrip(HudCycleStrip.Axis.ARC, PocketsSettings::previews);
