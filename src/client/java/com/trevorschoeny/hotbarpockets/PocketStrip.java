@@ -4,6 +4,7 @@ import com.trevlar.menukit.api.hud.HudCycleStrip;
 import com.trevlar.slotkit.api.storage.Storage;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Util;
 import net.minecraft.world.item.ItemStack;
 
 import org.jspecify.annotations.Nullable;
@@ -26,8 +27,11 @@ import java.util.function.BooleanSupplier;
  * <h3>Predicting the turn</h3>
  * The server turns the ring and the new order arrives a round trip later, but the strip
  * slides the moment the key is pressed. So {@link #predict} stores the turned ring and
- * {@link #viewFor} returns it for a short window, or the strip would slide the old order
- * and then jump.
+ * {@link #viewFor} returns it until the server's ring matches it, or the arc would draw
+ * the old order mid-slide (the stack leaving the hand drawn as the held one, over the one
+ * coming in) and then jump. A turn the server refuses never matches, so the prediction
+ * also gives up after {@link #PREDICTION_LIMIT_MILLIS} on the game clock, the one
+ * MenuKit times the slide on.
  */
 public final class PocketStrip implements HudCycleStrip.Source {
 
@@ -90,8 +94,8 @@ public final class PocketStrip implements HudCycleStrip.Source {
     @Override
     public HudCycleStrip.Style style() { return STYLE; }
 
-    /** How long a predicted ring is shown; covers the rotation's round trip. */
-    private static final long PREDICTION_WINDOW_MILLIS = 500L;
+    /** The longest a predicted ring waits for the server's: a refused turn, or a very slow round trip. */
+    private static final long PREDICTION_LIMIT_MILLIS = 2000L;
     private static int predictedHotbar = -1;
     private static @Nullable List<ItemStack> predictedRing = null;
     private static long predictedUntil = 0L;
@@ -99,11 +103,7 @@ public final class PocketStrip implements HudCycleStrip.Source {
     @Override
     public HudCycleStrip.@Nullable View viewFor(int hotbarSlot) {
         if (!PocketsSettings.enabled() || !on.getAsBoolean()) return null;
-        if (predictedRing != null && predictedHotbar == hotbarSlot
-                && System.currentTimeMillis() < predictedUntil) {
-            return new HudCycleStrip.View(predictedRing, 0);
-        }
-        List<ItemStack> ring = ring(hotbarSlot);
+        List<ItemStack> ring = pendingOrLive(hotbarSlot);
         return ring == null ? null : new HudCycleStrip.View(ring, 0);
     }
 
@@ -112,14 +112,37 @@ public final class PocketStrip implements HudCycleStrip.Source {
      * it. Forward brings the next member to the hand, so the ring shifts one left.
      */
     public static void predict(int hotbar, boolean forward) {
-        List<ItemStack> ring = ring(hotbar);
+        // From the pending prediction when a turn is still unconfirmed, so two quick turns
+        // predict two steps.
+        List<ItemStack> ring = pendingOrLive(hotbar);
         if (ring == null) return;
         List<ItemStack> next = new ArrayList<>(ring);
         if (forward) next.add(next.removeFirst());
         else next.addFirst(next.removeLast());
         predictedHotbar = hotbar;
         predictedRing = List.copyOf(next);
-        predictedUntil = System.currentTimeMillis() + PREDICTION_WINDOW_MILLIS;
+        predictedUntil = Util.getMillis() + PREDICTION_LIMIT_MILLIS;
+    }
+
+    /**
+     * The predicted ring while the server hasn't caught up with it, otherwise the live one
+     * (null without pockets). The prediction ends once the live ring matches it or its
+     * limit passes.
+     */
+    private static @Nullable List<ItemStack> pendingOrLive(int hotbar) {
+        List<ItemStack> live = ring(hotbar);
+        if (predictedRing == null || predictedHotbar != hotbar) return live;
+        if (live != null && sameStacks(live, predictedRing) || Util.getMillis() >= predictedUntil) {
+            predictedRing = null;
+            return live;
+        }
+        return predictedRing;
+    }
+
+    private static boolean sameStacks(List<ItemStack> a, List<ItemStack> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) if (!ItemStack.matches(a.get(i), b.get(i))) return false;
+        return true;
     }
 
     /** The live ring for a hotbar slot, held stack first, or null without pockets. */
