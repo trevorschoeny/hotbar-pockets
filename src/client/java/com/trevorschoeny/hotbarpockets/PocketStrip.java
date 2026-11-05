@@ -52,8 +52,8 @@ public final class PocketStrip implements HudCycleStrip.Source {
      * the way). It starts gently, travels most of the distance by 0.4, overshoots about
      * 9% at 0.6 and settles by 1. Trev wanted the items to visibly slide, then bounce a
      * little; MenuKit's SPRING covers most of the distance in the first sixth, which read
-     * as a pop. 300 ms was too fast for him, 450 a little slow. The last term takes the spring's leftover at 1 out linearly, so it ends
-     * at exactly 1.
+     * as a pop. 300 ms was too fast for him, 450 a little slow. The last term takes the
+     * spring's leftover at 1 out linearly, so it ends at exactly 1.
      * ponytail: tuned by eye from clips; move into MenuKit as Easing.spring(damping, peak)
      * if another mod wants the same feel.
      */
