@@ -64,9 +64,6 @@ public final class PocketArcs {
     /** How far above the hotbar item's center the arc's middle sits: the row grows from there. */
     private static final float ARC_RISE = 9f;
 
-    /** Draws nothing: a row slot's item while the arc's copy of it is still flying in. */
-    private static final ItemAnimation HIDDEN = (g, stack, x, y, t) -> {};
-
     // The hover slide, render thread only. lastRevealed is the column shown last frame;
     // slideColumn the one sliding (or -1), opening its direction, slideStart its clock.
     private static int lastRevealed = -1;
@@ -102,7 +99,7 @@ public final class PocketArcs {
         CreatedSlot created = CreatedSlot.of(slot);
         if (created == null) return null;
         for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
-            if (Pockets.isPocket(created, slideColumn, d)) return HIDDEN.at(1f);
+            if (Pockets.isPocket(created, slideColumn, d)) return ItemAnimation.HIDDEN.at(1f);   // the item, its count and its bar
         }
         return null;
     }
