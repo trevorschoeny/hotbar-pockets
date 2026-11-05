@@ -1,6 +1,7 @@
 package com.trevorschoeny.hotbarpockets;
 
 import com.trevlar.slotkit.api.slot.CreatedSlot;
+import com.trevlar.slotkit.api.storage.Storage;
 import com.trevlar.slotkit.api.window.BehaviorKey;
 import com.trevlar.slotkit.api.window.SlotOperations;
 import com.trevlar.slotkit.api.window.TriBool;
@@ -8,6 +9,7 @@ import com.trevlar.slotkit.api.window.TriBool;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * The inventory-menu slots a pocket move touches, and whether an operation may
@@ -22,6 +24,35 @@ import net.minecraft.world.inventory.Slot;
  * is exactly the unchecked move this exists to prevent.
  */
 public final class PocketRing {
+
+    /**
+     * Turns the ring [hotbar slot, its {@code count} pockets] one step, on whichever side
+     * {@code player} is. FORWARD brings pocket 0 into the hand and wraps the hand's item to
+     * the top pocket; BACKWARD is the mirror. No checks: the server's
+     * {@link PocketServerOps#rotate} asks first, and the client turns its own copy the
+     * moment the key is pressed so the new item works at once (PocketInput).
+     */
+    public static void turn(Player player, int hotbar, int count, boolean forward) {
+        Storage pockets = Pockets.POCKETS.bind(player);
+        int m = count + 1;
+        ItemStack[] items = new ItemStack[m];
+        // Top to bottom as drawn: pocket count-1 down to pocket 0, then the hotbar item.
+        for (int i = 0; i < count; i++) {
+            items[i] = pockets.getStack(Pockets.flatIndex(hotbar, count - 1 - i));
+        }
+        items[count] = player.getInventory().getItem(hotbar);
+
+        ItemStack[] out = new ItemStack[m];
+        for (int i = 0; i < m; i++) {
+            out[i] = forward ? items[(i - 1 + m) % m] : items[(i + 1) % m];
+        }
+
+        for (int i = 0; i < count; i++) {
+            pockets.setStack(Pockets.flatIndex(hotbar, count - 1 - i), out[i]);
+        }
+        player.getInventory().setItem(hotbar, out[count]);
+        pockets.markDirty();
+    }
 
     private PocketRing() {}
 

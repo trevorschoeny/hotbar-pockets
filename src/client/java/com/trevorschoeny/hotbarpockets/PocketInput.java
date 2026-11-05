@@ -90,10 +90,13 @@ public final class PocketInput {
         beforeRotate.accept(hotbar);
         ClientPlayNetworking.send(new PocketRotateC2S(hotbar, forward,
                 PocketOperations.POCKET_CYCLE.id(), PocketOperations.POCKET_CYCLE.id()));
-        // Predict the rotation locally so the HUD animation is drawn against the
-        // rotated arrangement. The server's rotation arrives a round trip later,
-        // and without this the animation desyncs.
+        // The HUD's prediction holds the turned ring until the server's arrives, so the
+        // slide draws against it even if an older sync lands meanwhile.
         PocketStrip.predict(hotbar, forward);
+        // Turn this client's copy now, so the new item is in hand from the first frame of
+        // the slide: a swing or use right after reaches the server after the turn, since
+        // packets keep their order. A turn the server refuses comes back as a resync.
+        PocketRing.turn(mc.player, hotbar, count, forward);
         for (PocketStrip look : PocketStrip.ALL) HudCycleStrip.slide(look, hotbar,
                 forward ? HudCycleStrip.Direction.FORWARD : HudCycleStrip.Direction.BACKWARD);
     }

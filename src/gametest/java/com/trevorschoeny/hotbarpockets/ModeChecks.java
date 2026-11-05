@@ -54,6 +54,7 @@ public class ModeChecks implements FabricClientGameTest {
                 ctx.waitTicks(3);
                 expectShown(true);
                 expectContents();
+                expectTurnInHandAtOnce();
             });
             run("hotbarpockets:survival", "survival", this::expectOverRecipeBook);
             run("hotbarpockets:creative_inventory", "creative", () -> {
@@ -289,6 +290,34 @@ public class ModeChecks implements FabricClientGameTest {
         ctx.takeScreenshot("pockets-check-contents");
         setPocket(ItemStack.EMPTY);
         if (wrong != null) throw new AssertionError(wrong);
+    }
+
+    /**
+     * A turn puts the new item in the client's hand the moment the key is pressed, before
+     * the server answers, and the server ends up with the same.
+     */
+    private void expectTurnInHandAtOnce() {
+        ctx.setScreen(() -> null);
+        ctx.waitTicks(2);
+        setPocket(new ItemStack(Items.GOLDEN_APPLE, 2));
+        String wrong = ctx.computeOnClient(mc -> {
+            mc.player.getInventory().setSelectedSlot(HOTBAR);
+            PocketInput.cycle(HOTBAR, true);
+            // Same client task: no packet from the server can have arrived yet.
+            ItemStack held = mc.player.getInventory().getItem(HOTBAR);
+            return held.is(Items.GOLDEN_APPLE) ? null : "right after the key the client holds " + held + ", not the golden apples";
+        });
+        if (wrong != null) throw new AssertionError(wrong);
+        ctx.waitTicks(5);
+        boolean serverAgrees = scene.world().getServer().computeOnServer(server ->
+                server.getPlayerList().getPlayers().getFirst().getInventory().getItem(HOTBAR).is(Items.GOLDEN_APPLE));
+        if (!serverAgrees) throw new AssertionError("the server didn't turn the golden apples into the hand");
+        // Back as it was: the apples into their pocket, then out of it.
+        ctx.runOnClient(mc -> PocketInput.cycle(HOTBAR, false));
+        ctx.waitTicks(5);
+        setPocket(ItemStack.EMPTY);
+        ctx.getInput().pressKey(o -> o.keyInventory);
+        ctx.waitTicks(3);
     }
 
     /** Opens creative's inventory and switches to the first tab of {@code type}. */

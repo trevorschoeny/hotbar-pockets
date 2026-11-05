@@ -32,33 +32,16 @@ public final class PocketServerOps {
                               BehaviorKey<TriBool> take, BehaviorKey<TriBool> put) {
         if (sp == null || hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return;
         int count = Pockets.count(sp, hotbar);
-        if (count < 1) return; // a ring needs at least 2 members (1 pocket and the hotbar slot)
-        // Asked again here, for the operation the packet names. The client asked
-        // before sending, but Inventory Plus's locks live on the client, so the
-        // server's answer is the one that holds for every other mod's vetoes.
-        if (!PocketRing.rotationAllowed(sp.inventoryMenu, sp, hotbar, count, take, put)) return;
-
-        Storage pockets = Pockets.POCKETS.bind(sp);
-        int m = count + 1;
-        ItemStack[] items = new ItemStack[m];
-        // Top to bottom as drawn: pocket count-1 down to pocket 0, then the hotbar item.
-        for (int i = 0; i < count; i++) {
-            int depth = count - 1 - i;
-            items[i] = pockets.getStack(Pockets.flatIndex(hotbar, depth));
+        // A ring needs at least 2 members (1 pocket and the hotbar slot). Asked again here,
+        // for the operation the packet names: the client asked before sending, but Inventory
+        // Plus's locks live on the client, so the server's answer is the one that holds for
+        // every other mod's vetoes. A refused turn sends the client the real contents back,
+        // since it already made the turn itself (PocketInput).
+        if (count < 1 || !PocketRing.rotationAllowed(sp.inventoryMenu, sp, hotbar, count, take, put)) {
+            sp.inventoryMenu.sendAllDataToRemote();
+            return;
         }
-        items[count] = sp.getInventory().getItem(hotbar);
-
-        ItemStack[] out = new ItemStack[m];
-        for (int i = 0; i < m; i++) {
-            out[i] = forward ? items[(i - 1 + m) % m] : items[(i + 1) % m];
-        }
-
-        for (int i = 0; i < count; i++) {
-            int depth = count - 1 - i;
-            pockets.setStack(Pockets.flatIndex(hotbar, depth), out[i]);
-        }
-        sp.getInventory().setItem(hotbar, out[count]);
-        pockets.markDirty();
+        PocketRing.turn(sp, hotbar, count, forward);
         sp.inventoryMenu.broadcastChanges();
     }
 
