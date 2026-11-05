@@ -31,7 +31,7 @@ public final class PocketOperations {
             TriBool.class, TriBool.TRUE, Tier.SERVER, KindTag.VANILLA_SLOT, KindTag.CREATED_SLOT);
 
     /**
-     * Defines Pocket Cycler so SlotKit lists it and locks or Reach can refuse it. It
+     * Defines Pocket Cycler so SlotKit lists it and locks can refuse it. It
      * moves items between a hotbar slot and the pockets behind it, so it applies to the
      * hotbar and to inventory-category groups, the pockets among them. {@code only}
      * admits another mod's group only by a category named here, so slots of their own

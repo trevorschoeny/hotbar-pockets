@@ -23,8 +23,8 @@ import java.util.Arrays;
  * Pocket counts on a dedicated server, over real connections: the server owns them
  * ({@link PocketCounts}). A player updating from 2.1.0 keeps the layout their client
  * saved, and no item is left in a pocket past the count. Counts survive leaving and
- * rejoining, and death. A pocket past the count is refused by the server itself, with
- * Reach's report saying every pocket may take a shift-click. Shrinking in creative with
+ * rejoining, and death. A pocket past the count is refused by the server itself, and a
+ * shift-click never lands in a pocket. Shrinking in creative with
  * a full inventory drops the removed pocket's item instead of deleting it.
  */
 public class CountChecks implements FabricClientGameTest {
@@ -86,35 +86,29 @@ public class CountChecks implements FabricClientGameTest {
     }
 
     /**
-     * Slot 3 has no pockets. Its first pocket is inert on the server, and refuses a stack,
-     * though the client's report says every pocket may take a shift-click. Slot 0's first
-     * pocket, within its count, takes one. With Inventory Plus loaded, a server-side
-     * shift-click from the inventory lands in a live pocket only.
+     * Slot 3 has no pockets. Its first pocket is inert on the server, and refuses a stack.
+     * Slot 0's first pocket, within its count, takes one. A server-side shift-click from the
+     * inventory lands in no pocket at all, with or without Inventory Plus.
      */
     private static void serverRefusesPastCount(ClientGameTestContext ctx, TestDedicatedServerContext server) {
         server.runOnServer(s -> {
             ServerPlayer p = player(s);
-            PocketIntake.report(p, (1 << Pockets.TOTAL) - 1);
             Slot hidden = p.inventoryMenu.getSlot(PocketRing.pocketMenuIndex(p.inventoryMenu, 3, 0));
             Slot live = p.inventoryMenu.getSlot(PocketRing.pocketMenuIndex(p.inventoryMenu, 0, 0));
             ItemStack dirt = new ItemStack(Items.DIRT);
             check(!hidden.mayPlace(dirt) && CreatedSlot.of(hidden).isInert(), "pocket (3, 0), past slot 3's count of 0, is live on the server");
             check(live.mayPlace(dirt), "pocket (0, 0), within slot 0's count of 1, refuses dirt on the server");
 
-            if (!FabricLoader.getInstance().isModLoaded("inventoryplus")) return;
             int from = 20;   // main inventory slot 20 is menu slot 20 on the inventory
             p.getInventory().setItem(from, new ItemStack(Items.DIRT, 64 * 3));
             p.inventoryMenu.quickMoveStack(p, from);
             var stacks = Pockets.POCKETS.bind(p);
-            for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
-                for (int d = Pockets.count(p, n); d < Pockets.MAX_PER_SLOT; d++) {
-                    check(!stacks.getStack(Pockets.flatIndex(n, d)).is(Items.DIRT), "dirt reached pocket (" + n + ", " + d + "), past the count");
-                }
+            for (int i = 0; i < Pockets.TOTAL; i++) {
+                check(!stacks.getStack(i).is(Items.DIRT), "a shift-click put dirt in pocket " + i);
             }
             for (int i = 0; i < Pockets.TOTAL; i++) if (stacks.getStack(i).is(Items.DIRT)) stacks.setStack(i, ItemStack.EMPTY);
             p.getInventory().setItem(from, ItemStack.EMPTY);
         });
-        server.runOnServer(s -> PocketIntake.report(player(s), 0));
     }
 
     /**

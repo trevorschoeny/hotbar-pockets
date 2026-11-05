@@ -162,9 +162,8 @@ public class ModeChecks implements FabricClientGameTest {
     }
 
     /**
-     * Shift-clicks the chest's oak logs (menu slot 0) and confirms they never land in a pocket.
-     * Pocket groups turn shiftClickIn on only when Inventory Plus is loaded ({@link Pockets#register});
-     * this gametest run never has it, so this guards the off state the switch must default to.
+     * Shift-clicks the chest's oak logs (menu slot 0) and confirms they never land in a pocket:
+     * pockets never take a shift-click ({@link Pockets#register}).
      */
     private void expectShiftClickNeverFillsPocket() {
         shiftClick(0);

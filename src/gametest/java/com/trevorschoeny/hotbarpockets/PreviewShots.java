@@ -86,6 +86,16 @@ public class PreviewShots implements FabricClientGameTest {
             hover.run();
             settle.run();
             capture("previews-inventory-close", leave, PocketArcs::restampSlide, () -> { hover.run(); settle.run(); });
+            leave.run();
+            settle.run();
+
+            // Slot 4: two pockets, the second empty, so its row opens with one empty slot.
+            double[] slot4 = slotCenter(3);
+            Runnable hover4 = () -> { ctx.getInput().setCursorPos(slot4[0], slot4[1]); ctx.waitTick(); };
+            capture("previews-inventory-open-empty", hover4, PocketArcs::restampSlide, () -> { leave.run(); settle.run(); });
+            hover4.run();
+            settle.run();
+            capture("previews-inventory-close-empty", leave, PocketArcs::restampSlide, () -> { hover4.run(); settle.run(); });
         }
     }
 

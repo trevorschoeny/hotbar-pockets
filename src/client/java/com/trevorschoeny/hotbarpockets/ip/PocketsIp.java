@@ -32,8 +32,9 @@ import java.util.List;
  *       "Show the Pockets button" is on.</li>
  *   <li><b>The Pockets tab</b> in IP's settings menu ({@link PocketsSettingsTab}), opened
  *       by Ctrl-click on the column switch or on + and -.</li>
- *   <li><b>Reach protection:</b> pockets deny every operation but a hand click, shift-click
- *       out, and the moves that run the pocket turn itself.</li>
+ *   <li><b>Protected pockets</b> ({@code protectInReach}): Inventory Plus's own features
+ *       (sorting, Intake, its moves) leave pockets alone; only a hand click, shift-click
+ *       out and the moves that run the pocket turn itself reach them.</li>
  * </ul>
  */
 public final class PocketsIp {
@@ -50,7 +51,7 @@ public final class PocketsIp {
         };
         InventoryPlusApi.addFeatureSwitch(PocketsSettingsTab.TAB_ID, "Pockets",
                 Identifier.fromNamespaceAndPath(HotbarPockets.MOD_ID, "pockets_button"),
-                PocketsSettings::enabled, on -> { PocketsSettings.setEnabled(on); PocketState.reportIntake(); }, PocketsSettings::showButton,
+                PocketsSettings::enabled, PocketsSettings::setEnabled, PocketsSettings::showButton,
                 "Hover over a hotbar slot to show its pockets");
 
         List<SlotGroupId> pocketGroups = new ArrayList<>();

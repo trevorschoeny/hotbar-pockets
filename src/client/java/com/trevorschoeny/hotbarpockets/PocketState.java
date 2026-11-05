@@ -5,8 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import com.trevlar.slotkit.api.window.BehaviorKeys;
-import com.trevlar.slotkit.api.window.SlotOperations;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -109,26 +107,5 @@ public final class PocketState {
     /** Pushes every hotbar slot's count into the server-safe hover state. */
     public static void pushAll() {
         for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) PocketHoverState.setCount(n, count(n));
-    }
-
-    /**
-     * Tells the server which pockets may take a shift-click ({@link PocketIntake}): while
-     * pockets are on, those this client's rules allow a shift-click into (Inventory Plus's
-     * Reach judges here, on the client). Which pockets exist the server knows itself.
-     */
-    public static void reportIntake() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !ClientPlayNetworking.canSend(PocketIntakeC2S.TYPE)) return;
-        var menu = mc.player.inventoryMenu;
-        int mask = 0;
-        for (int n = 0; PocketsSettings.enabled() && n < Pockets.HOTBAR_SLOTS; n++) {
-            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
-                int idx = PocketRing.pocketMenuIndex(menu, n, d);
-                if (idx >= 0 && SlotOperations.allows(menu, menu.getSlot(idx), mc.player, BehaviorKeys.SHIFT_CLICK_IN)) {
-                    mask |= 1 << Pockets.flatIndex(n, d);
-                }
-            }
-        }
-        ClientPlayNetworking.send(new PocketIntakeC2S(mask));
     }
 }

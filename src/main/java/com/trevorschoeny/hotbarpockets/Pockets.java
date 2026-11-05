@@ -10,7 +10,6 @@ import com.trevlar.slotkit.api.slot.SlotSpec;
 import com.trevlar.slotkit.api.storage.StorageAttachment;
 import com.trevlar.slotkit.api.storage.StorageAttachment.PlayerStorageAttachment;
 
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -58,7 +57,7 @@ public final class Pockets {
     /** Each pocket's one group. SlotKit derives the group id from it and the owner (panel) id. */
     public static final String GROUP = "slot";
 
-    /** The one row the 27 pockets share in slot group listings (IP's Reach, any settings screen). */
+    /** The one row the 27 pockets share in slot group listings (any settings screen). */
     public static final SlotGroupSet POCKET_SET = new SlotGroupSet(MOD_ID, "pockets");
 
     /** The 27 stacks, saved with the player on the server. Drop on death as the inventory does. */
@@ -94,16 +93,11 @@ public final class Pockets {
                                 // Read only on the client: shown while this column is the
                                 // hovered one and its count reaches this depth.
                                 .revealWhen(() -> PocketHoverState.isRevealed(hotbar, depth))
-                                // A double-click and drag still never pull from or pour into
-                                // a pocket. Shift-click out always works, so a pocket can be
-                                // emptied quickly. Shift-click in is a SlotKit-level switch,
-                                // on only when Inventory Plus is loaded; IP's Reach already
-                                // denies it by default (protectInReach in PocketsIp), so its
-                                // toggle is what actually turns shift-click-in on, and nothing
-                                // routes into a pocket at all without IP present. The server
-                                // holds to what Reach allows (PocketIntake), since Reach lives
-                                // on the client; the count it enforces itself.
-                                .shiftClickIn(FabricLoader.getInstance().isModLoaded("inventoryplus"))
+                                // Pockets take no part in vanilla's bulk moves: a shift-click,
+                                // a double-click or a drag never pours into or pulls from one,
+                                // with or without Inventory Plus (Trev, 2026-11-05). Shift-click
+                                // out always works, so a pocket can be emptied quickly.
+                                .shiftClickIn(false)
                                 .collect(false)
                                 .dragFill(false));
             }

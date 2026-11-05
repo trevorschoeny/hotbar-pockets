@@ -104,9 +104,9 @@ public final class PocketCyclable implements HotbarCyclable {
     @Override
     public List<ExtraSlot> extraSearchSlots(Player player) {
         if (!PocketsSettings.enabled()) return List.of();
-        // Whether Restock and Auto Tool Switch may take from pockets is their
-        // reach (Inventory Plus's Reach tab): the caller filters these through
-        // the cycler's allows, which Inventory Plus's veto answers.
+        // Whether Restock and Auto Tool Switch may take from pockets is Inventory
+        // Plus's to say: the caller filters these through the cycler's allows,
+        // which its veto (protectInReach, PocketsIp) answers.
         // Read live contents from the synced attachment. This works in the world,
         // where the pocket slots are inert and hidden (the cycle HUD does the same).
         Storage pockets = Pockets.POCKETS.bind(player);

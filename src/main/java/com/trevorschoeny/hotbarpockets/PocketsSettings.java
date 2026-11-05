@@ -82,8 +82,8 @@ public final class PocketsSettings {
             if (root.has("showButton")) showButton = root.get("showButton").getAsBoolean();
             if (root.has("previews")) previews = root.get("previews").getAsBoolean();
             if (root.has("miniHotbar")) miniHotbar = root.get("miniHotbar").getAsBoolean();
-            // ponytail: the old "hud" choice (MINI_HOTBAR or NONE) is ignored, so everyone
-            // starts on the new defaults; map it if players ask for their old HUD back.
+            // The old "hud" choice (MINI_HOTBAR or NONE) is ignored on purpose: everyone
+            // moves to the new defaults, previews on and the mini hotbar off (Trev, 2026-11-05).
         } catch (IOException | JsonSyntaxException | IllegalStateException | ClassCastException
                  | UnsupportedOperationException ex) {
             HotbarPockets.LOGGER.error("[hotbarpockets] failed to read {}, using defaults", path, ex);
