@@ -12,6 +12,7 @@ import com.trevlar.menukit.api.panel.PanelTransform;
 import com.trevlar.menukit.api.panel.Placement;
 import com.trevlar.menukit.api.panel.ScreenOrigin;
 import com.trevlar.menukit.api.panel.ScreenPanelAdapter;
+import com.trevlar.menukit.api.panel.SlotDecorations;
 import com.trevlar.menukit.api.panel.SlotItemLooks;
 import com.trevlar.slotkit.api.group.SlotScreenRect;
 import com.trevlar.slotkit.api.slot.CreatedSlot;
@@ -20,6 +21,7 @@ import com.trevlar.slotkit.api.storage.Storage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -30,7 +32,9 @@ import java.util.List;
 /**
  * Pocket previews on container screens: each hotbar slot with pockets shows its arc above
  * it, drawn by MenuKit exactly as the HUD draws it ({@link HudCycleStrip#drawArc}), so you
- * can see what every column holds without hovering.
+ * can see what every column holds without hovering. A resting arc is an under-decoration
+ * of its hotbar slot ({@link #drawRestingArc}): on the screen's image, under the slot's own
+ * item, as on the HUD, so the slot's stack, highlight and pickup bob draw over it as vanilla's.
  *
  * <h3>The hover slide</h3>
  * When a column's pocket row opens, that column's arc items slide in straight lines,
@@ -48,7 +52,7 @@ public final class PocketArcs {
 
     private PocketArcs() {}
 
-    /** Above the pocket row (and its backing box), so the sliding items draw over its frames. */
+    /** The hover slide's panel: above the pocket row (and its backing box), so the sliding items draw over its frames. */
     private static final int PRIORITY = PanelPosition.DEFAULT_PRIORITY + 2;
 
     /**
@@ -70,9 +74,9 @@ public final class PocketArcs {
     private static boolean opening;
     private static HudCycleStrip.@Nullable SlideStart slideStart;
 
-    /** Registers the arcs panel and the row-hiding look. Call once at client init. */
+    /** Registers the resting arcs, the hover slide's panel and the row-hiding look. Call once at client init. */
     public static void register() {
-        // One panel at the screen's corner; its element draws every arc in screen coordinates.
+        // One panel at the screen's corner; its element draws the hover slide in screen coordinates.
         Panel arcs = Panel.builder(HotbarPockets.MOD_ID + ":pocket_arcs")
                 .elements(List.of(new Arcs()))
                 .visible(true)
@@ -84,6 +88,7 @@ public final class PocketArcs {
                 .opaque(false);
         new ScreenPanelAdapter(arcs, 0).onAny();
         SlotItemLooks.declare(HotbarPockets.MOD_ID + ":pocket_row_sliding", PocketArcs::hideWhileSliding);
+        SlotDecorations.under(HotbarPockets.MOD_ID + ":arcs", PocketArcs::drawRestingArc);
     }
 
     /** Whether a slide is running now. */
@@ -102,9 +107,22 @@ public final class PocketArcs {
         return null;
     }
 
+    // A hotbar slot's arc at rest, under the slot's item. Not the column whose row is open
+    // (the row is its view), nor one sliding (the slide panel draws that).
+    private static void drawRestingArc(GuiGraphicsExtractor g, AbstractContainerScreen<?> screen, Slot slot,
+                                       ItemStack stack, int x, int y) {
+        if (!(slot.container instanceof Inventory) || slot.getContainerSlot() >= Pockets.HOTBAR_SLOTS) return;
+        if (!PocketsSettings.enabled() || !PocketsSettings.previews()) return;
+        int n = slot.getContainerSlot();
+        // Null where this screen has no pockets.
+        if (PocketGeometry.shownAnchor(n) == null) return;
+        if (n == PocketHoverState.revealedHotbar() || (n == slideColumn && sliding())) return;
+        HudCycleStrip.drawArc(g, PocketStrip.ARC, n, x + 8, y + 8);
+    }
+
     /**
-     * Every hotbar slot's arc, and the hover slide, drawn in screen coordinates. Sized 1 px
-     * because MenuKit skips an empty panel; the panel isn't opaque, so it takes no clicks.
+     * The hover slide, drawn in screen coordinates over everything. Sized 1 px because
+     * MenuKit skips an empty panel; the panel isn't opaque, so it takes no clicks.
      */
     private static final class Arcs implements PanelElement {
         @Override public int getChildX() { return 0; }
@@ -121,16 +139,10 @@ public final class PocketArcs {
                 PocketHoverState.setClosingHotbar(-1);
                 slideColumn = -1;
             }
-            GuiGraphicsExtractor g = ctx.graphics();
-            int revealed = PocketHoverState.revealedHotbar();
-            for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
-                // Null where this screen has no pockets or no such hotbar slot.
-                SlotScreenRect slot = PocketGeometry.shownAnchor(n);
-                if (slot == null) continue;
-                if (n == slideColumn && sliding()) drawSlide(g, n, slot);
-                // The open row is this column's view; its arc stays hidden meanwhile.
-                else if (n != revealed) HudCycleStrip.drawArc(g, PocketStrip.ARC, n, slot.x() + 8, slot.y() + 8);
-            }
+            if (!sliding()) return;
+            // Null where this screen has no pockets.
+            SlotScreenRect slot = PocketGeometry.shownAnchor(slideColumn);
+            if (slot != null) drawSlide(ctx.graphics(), slideColumn, slot);
         }
     }
 
