@@ -56,14 +56,14 @@ public final class PocketStrip implements HudCycleStrip.Source {
             .build();
 
     /**
-     * The slide's curve: a damped spring's step response (damping 0.6, peaking at 0.6 of
-     * the way). It starts gently, travels most of the distance by 0.4, overshoots about
-     * 9% at 0.6 and settles by 1. Trev wanted the items to visibly slide, then bounce a
-     * little; MenuKit's SPRING covers most of the distance in the first sixth, which read
-     * as a pop. 300 ms was too fast for him, 450 a little slow; he settled on 333. The last term takes the
-     * spring's leftover at 1 out linearly, so it ends at exactly 1.
-     * ponytail: tuned by eye from clips; move into MenuKit as Easing.spring(damping, peak)
-     * if another mod wants the same feel.
+     * The slide's curve: a spring let go at full speed, {@code 1 - e^(-6.5t) cos(2.2πt)}. It
+     * leaves at once (a third of the way in the first twentieth), so a key press answers
+     * immediately, overshoots about 8% at 0.35 and settles by about 0.65. Trev, 2026-11-05:
+     * the items should visibly slide, bounce a little and feel responsive. MenuKit's SPRING
+     * covered most of the distance in a pop; a gently starting spring felt slow off the key.
+     * The last term takes the spring's leftover at 1 out linearly, so it ends at exactly 1.
+     * ponytail: tuned by eye from clips; move into MenuKit as an Easing if another mod
+     * wants the same feel.
      */
     private static float slideCurve(float t) {
         if (t <= 0f) return 0f;
@@ -71,14 +71,11 @@ public final class PocketStrip implements HudCycleStrip.Source {
         return (float) (1.0 - springRest(t) + springRest(1.0) * t);
     }
 
-    private static final double DAMPING = 0.6, PEAK_AT = 0.6;
-    private static final double DAMPED_FREQ = Math.PI / PEAK_AT;
-    private static final double DECAY = DAMPING * DAMPED_FREQ / Math.sqrt(1 - DAMPING * DAMPING);
-    private static final double SINE_WEIGHT = DAMPING / Math.sqrt(1 - DAMPING * DAMPING);
+    private static final double DECAY = 6.5, FREQ = 2.2 * Math.PI;
 
     // How far the spring still is from rest at t, in the units of the whole move.
     private static double springRest(double t) {
-        return Math.exp(-DECAY * t) * (Math.cos(DAMPED_FREQ * t) + SINE_WEIGHT * Math.sin(DAMPED_FREQ * t));
+        return Math.exp(-DECAY * t) * Math.cos(FREQ * t);
     }
 
     /** Pocket previews: the ring as an arc above every hotbar slot with pockets. */
