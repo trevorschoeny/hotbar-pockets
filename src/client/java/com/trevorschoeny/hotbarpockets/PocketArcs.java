@@ -220,7 +220,10 @@ public final class PocketArcs {
             // The row slot's 18 px frame is at rowX/rowY; its item's center is 9 in.
             float rx = PocketGeometry.rowX(slot, count, d) + 9, ry = PocketGeometry.rowY(slot) + 9;
             HudCycleStrip.drawArcItem(g, PocketStrip.STYLE, stack, ax + (rx - ax) * k, ay + (ry - ay) * k,
-                    PocketStrip.STYLE.iconScale() + (1f - PocketStrip.STYLE.iconScale()) * k);
+                    PocketStrip.STYLE.iconScale() + (1f - PocketStrip.STYLE.iconScale()) * k,
+                    // The count and bar grow and fade in with the item, so the slot's own
+                    // take over seamlessly when the slide ends.
+                    Math.clamp(k, 0f, 1f));
         }
     }
 }
