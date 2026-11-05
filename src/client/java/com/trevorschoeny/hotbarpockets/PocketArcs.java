@@ -188,6 +188,20 @@ public final class PocketArcs {
     }
 
     /**
+     * The plus and minus strip, mirroring the row: while a row slides it grows out from
+     * under the hotbar slot (scaled about the middle of the slot's bottom edge) and fades
+     * in, on the same spring, and goes back the same way.
+     */
+    static PanelTransform buttonsTransform() {
+        if (!sliding()) return PanelTransform.IDENTITY;
+        SlotScreenRect slot = PocketGeometry.shownAnchor(slideColumn);
+        if (slot == null) return PanelTransform.IDENTITY;
+        float k = rowness();
+        float scale = Math.max(0.05f, ROW_START_SCALE + (1f - ROW_START_SCALE) * k);
+        return new PanelTransform(scale, slot.x() + 8, PocketGeometry.buttonsTop(slot), k);
+    }
+
+    /**
      * Column {@code n}'s stacks part way between its arc and its row: each in a straight line
      * from its arc point to its row slot's center, scaling from the arc's size to full size.
      * {@code k} is 0 at the arc and 1 in the row (a little past either end at the spring's

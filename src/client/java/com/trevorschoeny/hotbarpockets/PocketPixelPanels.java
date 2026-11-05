@@ -101,7 +101,9 @@ public final class PocketPixelPanels {
                 .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::buttonsOrigin)))
                 .build()
                 // Only a hit inside a button counts; the 1px gap between them eats nothing.
-                .opaque(false);
+                .opaque(false)
+                // Grows out from under the slot and fades in as the row grows out of the arc.
+                .transform(PocketArcs::buttonsTransform);
         new ScreenPanelAdapter(buttons, 0).onAny();
     }
 
@@ -119,10 +121,10 @@ public final class PocketPixelPanels {
                 PocketGeometry.rowY(anchor) - PocketGeometry.ROW_PAD);
     }
 
-    // The plus and minus strip's top-left: just below the shown column's hotbar slot.
-    // Null when no column is shown.
+    // The plus and minus strip's top-left: just below the shown column's hotbar slot
+    // (or one still shrinking away). Null when no column is shown.
     private static ScreenOrigin buttonsOrigin() {
-        int rev = PocketHoverState.revealedHotbar();
+        int rev = PocketHoverState.shownHotbar();
         if (rev < 0) return null;
         SlotScreenRect anchor = PocketGeometry.shownAnchor(rev);
         if (anchor == null) return null;
@@ -172,7 +174,7 @@ public final class PocketPixelPanels {
 
         /** Enabled while the shown column can still grow or shrink. */
         private boolean enabled() {
-            int rev = PocketHoverState.revealedHotbar();
+            int rev = PocketHoverState.shownHotbar();
             if (rev < 0) return false;
             int c = PocketHoverState.count(rev);
             return plus ? c < Pockets.MAX_PER_SLOT : c > 0;
