@@ -38,7 +38,8 @@ import java.util.List;
  * out of the arc and fade in with them ({@link #rowTransform}). When it closes, all of it
  * goes back into the arc; the row stays laid out until then
  * ({@link PocketHoverState#shownHotbar}). The timing is the cycle strip's spring
- * ({@link HudCycleStrip#begin}). Meanwhile the row's own items are hidden
+ * ({@link HudCycleStrip#begin}), quicker than a turn ({@link PocketStrip#HOVER_STYLE}).
+ * Meanwhile the row's own items are hidden
  * ({@link #hideWhileSliding}), or each would show twice: flying, and in its slot.
  *
  * <p>For looking only: the arcs take no clicks, and the row is still where pockets are used.
@@ -87,7 +88,7 @@ public final class PocketArcs {
 
     /** Whether a slide is running now. */
     private static boolean sliding() {
-        return slideColumn >= 0 && slideStart != null && !HudCycleStrip.slideDone(slideStart, PocketStrip.STYLE);
+        return slideColumn >= 0 && slideStart != null && !HudCycleStrip.slideDone(slideStart, PocketStrip.HOVER_STYLE);
     }
 
     // A row slot's item hides while its column's row opens or closes; any other slot is left be.
@@ -155,7 +156,7 @@ public final class PocketArcs {
      * spring's bounce.
      */
     private static float rowness() {
-        float p = slideStart == null ? 1f : HudCycleStrip.slideProgress(slideStart, PocketStrip.STYLE);
+        float p = slideStart == null ? 1f : HudCycleStrip.slideProgress(slideStart, PocketStrip.HOVER_STYLE);
         return opening ? p : 1f - p;
     }
 
