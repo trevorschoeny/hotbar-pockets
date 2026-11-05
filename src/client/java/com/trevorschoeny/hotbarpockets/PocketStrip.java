@@ -51,13 +51,12 @@ public final class PocketStrip implements HudCycleStrip.Source {
     }
 
     /**
-     * A turn on the HUD (Trev, 2026-11-05): a small ramp-up, most of the way by 0.4,
-     * overshooting about 7% at 0.55 and easing back through the rest, a longer bounce than
-     * the hover's. Half the distance in the first 15% of the slide.
+     * A turn on the HUD (Trev, 2026-11-05): the hover's snappy bounce with a small ramp-up
+     * off the key. Most of the way by 0.3, about 6% over at 0.4, settled by about 0.7.
      * ponytail: tuned by eye from clips; move spring() into MenuKit as an Easing if
      * another mod wants the same feel.
      */
-    private static final Easing TURN_CURVE = spring(4.5, 1.6 * Math.PI, 0.4);
+    private static final Easing TURN_CURVE = spring(6.5, 2.2 * Math.PI, 0.4);
 
     /**
      * The hover slide: let go at full speed, a third of the way in the first twentieth,
