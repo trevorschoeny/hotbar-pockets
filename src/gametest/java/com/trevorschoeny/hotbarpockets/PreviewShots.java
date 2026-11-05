@@ -31,7 +31,7 @@ public class PreviewShots implements FabricClientGameTest {
     private static final long SLOW = 10;
     /** Phase-shifted runs per animation: 3 gives a frame every 16.7 ms. */
     private static final int PASSES = 3;
-    /** Frames per run, 50 ms apart: the 450 ms slide (PocketStrip.STYLE) and a little rest after. */
+    /** Frames per run, 50 ms apart: the 380 ms slide (PocketStrip.STYLE) and a little rest after. */
     private static final int FRAMES_PER_PASS = 10;
 
     private ClientGameTestContext ctx;
