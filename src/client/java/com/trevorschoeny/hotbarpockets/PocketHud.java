@@ -1,5 +1,7 @@
 package com.trevorschoeny.hotbarpockets;
 
+import com.trevlar.menukit.api.DrawAlpha;
+import com.trevlar.menukit.api.ItemOutline;
 import com.trevlar.menukit.api.element.ItemAnimation.Pose;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.RenderContext;
@@ -7,8 +9,6 @@ import com.trevlar.menukit.api.hud.HotbarDecorations;
 import com.trevlar.menukit.api.hud.HudPanel;
 import com.trevlar.menukit.api.panel.ModeScope;
 import com.trevlar.menukit.api.panel.OutsideRegion;
-import com.trevlar.menukit.api.DrawAlpha;
-import com.trevlar.menukit.api.ItemOutline;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
