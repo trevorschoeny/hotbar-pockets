@@ -2,14 +2,12 @@ package com.trevorschoeny.hotbarpockets;
 
 import com.trevorschoeny.hotbarpockets.ip.PocketsIp;
 
-import com.trevlar.menukit.api.hud.HudCycleStrip;
-
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * Client init: the keys, the settings, the legacy counts, the hover row and its chrome, the cycle
- * strip and, only with Inventory Plus installed, its integration. The {@code ip}
+ * Client init: the keys, the settings, the legacy counts, the hover row and its chrome, the HUD
+ * ring and, only with Inventory Plus installed, its integration. The {@code ip}
  * package is touched nowhere else, so IP's classes never load without IP.
  */
 public final class HotbarPocketsClient implements ClientModInitializer {
@@ -25,7 +23,7 @@ public final class HotbarPocketsClient implements ClientModInitializer {
         PocketPixelPanels.register();
         PocketArcs.register();
         PocketInput.register();
-        for (PocketStrip look : PocketStrip.ALL) HudCycleStrip.register(look);
+        PocketHud.register();
         if (FabricLoader.getInstance().isModLoaded("inventoryplus")) PocketsIp.register();
     }
 }

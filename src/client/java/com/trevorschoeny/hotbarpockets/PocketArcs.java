@@ -3,7 +3,6 @@ package com.trevorschoeny.hotbarpockets;
 import com.trevlar.menukit.api.element.ItemAnimation;
 import com.trevlar.menukit.api.element.PanelElement;
 import com.trevlar.menukit.api.element.RenderContext;
-import com.trevlar.menukit.api.hud.HudCycleStrip;
 import com.trevlar.menukit.api.panel.ModeScope;
 import com.trevlar.menukit.api.panel.Panel;
 import com.trevlar.menukit.api.panel.PanelPosition;
@@ -21,6 +20,7 @@ import com.trevlar.slotkit.api.storage.Storage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * Pocket previews on container screens: each hotbar slot with pockets shows its arc above
- * it, drawn by MenuKit exactly as the HUD draws it ({@link HudCycleStrip#drawArc}), so you
+ * it, drawn exactly as the HUD draws it ({@link PocketHud#drawArc}), so you
  * can see what every column holds without hovering. A resting arc is an under-decoration
  * of its hotbar slot ({@link #drawRestingArc}): on the screen's image, under the slot's own
  * item, as on the HUD, so the slot's stack, highlight and pickup bob draw over it as vanilla's.
@@ -41,8 +41,8 @@ import java.util.List;
  * growing from half to full size, into their slots in the row, and the row's panels grow
  * out of the arc and fade in with them ({@link #rowTransform}). When it closes, all of it
  * goes back into the arc; the row stays laid out until then
- * ({@link PocketHoverState#shownHotbar}). The timing is the cycle strip's spring
- * ({@link HudCycleStrip#begin}), quicker than a turn ({@link PocketStrip#HOVER_STYLE}).
+ * ({@link PocketHoverState#shownHotbar}). The timing is the turn's spring, quicker
+ * ({@link PocketStrip#hoverProgress}).
  * Meanwhile the row's own items are hidden
  * ({@link #hideWhileSliding}), or each would show twice: flying, and in its slot.
  *
@@ -70,7 +70,7 @@ public final class PocketArcs {
     private static int lastRevealed = -1;
     private static int slideColumn = -1;
     private static boolean opening;
-    private static HudCycleStrip.@Nullable SlideStart slideStart;
+    private static long slideStart;
 
     /** Registers the resting arcs, the hover slide's panel and the row-hiding look. Call once at client init. */
     public static void register() {
@@ -91,7 +91,7 @@ public final class PocketArcs {
 
     /** Whether a slide is running now. */
     private static boolean sliding() {
-        return slideColumn >= 0 && slideStart != null && !HudCycleStrip.slideDone(slideStart, PocketStrip.HOVER_STYLE);
+        return slideColumn >= 0 && !PocketStrip.done(slideStart, PocketStrip.HOVER_MILLIS);
     }
 
     // A row slot's item hides while its column's row opens or closes; any other slot is left be.
@@ -115,7 +115,7 @@ public final class PocketArcs {
         // Null where this screen has no pockets.
         if (PocketGeometry.shownAnchor(n) == null) return;
         if (n == PocketHoverState.revealedHotbar() || (n == slideColumn && sliding())) return;
-        HudCycleStrip.drawArc(g, PocketStrip.ARC, n, x + 8, y + 8);
+        PocketHud.drawArc(g, n, x + 8, y + 8);
     }
 
     /**
@@ -152,13 +152,13 @@ public final class PocketArcs {
         if (revealed == lastRevealed) return;
         if (revealed >= 0) { slideColumn = revealed; opening = true; PocketHoverState.setClosingHotbar(-1); }
         else { slideColumn = lastRevealed; opening = false; PocketHoverState.setClosingHotbar(lastRevealed); }
-        slideStart = HudCycleStrip.begin();
+        slideStart = Util.getMillis();
         lastRevealed = revealed;
     }
 
     /** Restarts a running hover slide's clock now. For the preview shots, which start it at chosen times. */
     static void restampSlide() {
-        if (slideColumn >= 0) slideStart = HudCycleStrip.begin();
+        if (slideColumn >= 0) slideStart = Util.getMillis();
     }
 
     /**
@@ -166,7 +166,7 @@ public final class PocketArcs {
      * spring's bounce.
      */
     private static float rowness() {
-        float p = slideStart == null ? 1f : HudCycleStrip.slideProgress(slideStart, PocketStrip.HOVER_STYLE);
+        float p = PocketStrip.hoverProgress(slideStart);
         return opening ? p : 1f - p;
     }
 
@@ -208,9 +208,9 @@ public final class PocketArcs {
     private static void drawSlide(GuiGraphicsExtractor g, int n, SlotScreenRect slot) {
         Minecraft mc = Minecraft.getInstance();
         int count = PocketState.count(n);
-        if (mc.player == null || count < 1 || slideStart == null) return;
+        if (mc.player == null || count < 1) return;
         float k = rowness();
-        List<ItemAnimation.Pose> arc = PocketStrip.STYLE.points(count);
+        List<ItemAnimation.Pose> arc = PocketStrip.points(count);
         Storage pockets = Pockets.POCKETS.bind(mc.player);
         float cx = slot.x() + 8, cy = slot.y() + 8;   // the hotbar item's center
         for (int d = 0; d < count; d++) {
@@ -220,8 +220,8 @@ public final class PocketArcs {
             float ax = cx + at.offsetX(), ay = cy + at.offsetY();
             // The row slot's 18 px frame is at rowX/rowY; its item's center is 9 in.
             float rx = PocketGeometry.rowX(slot, count, d) + 9, ry = PocketGeometry.rowY(slot) + 9;
-            HudCycleStrip.drawArcItem(g, PocketStrip.STYLE, stack, ax + (rx - ax) * k, ay + (ry - ay) * k,
-                    PocketStrip.STYLE.iconScale() + (1f - PocketStrip.STYLE.iconScale()) * k,
+            PocketHud.drawArcItem(g, stack, ax + (rx - ax) * k, ay + (ry - ay) * k,
+                    PocketStrip.ICON_SCALE + (1f - PocketStrip.ICON_SCALE) * k,
                     // The count and bar grow and fade in with the item, so the slot's own
                     // take over seamlessly when the slide ends.
                     Math.clamp(k, 0f, 1f));

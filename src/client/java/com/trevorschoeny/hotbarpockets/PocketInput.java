@@ -1,7 +1,5 @@
 package com.trevorschoeny.hotbarpockets;
 
-import com.trevlar.menukit.api.hud.HudCycleStrip;
-
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -26,7 +24,7 @@ import java.util.function.IntConsumer;
  * with the on-screen plus and minus buttons.
  *
  * <p>The server does the rotation: this sends a {@link PocketRotateC2S} and
- * slides MenuKit's cycle strip, and the server moves the items and syncs back.
+ * slides the HUD ring (PocketStrip.slide), and the server moves the items and syncs back.
  */
 public final class PocketInput {
 
@@ -92,7 +90,6 @@ public final class PocketInput {
         // the slide: a swing or use right after reaches the server after the turn, since
         // packets keep their order. A turn the server refuses comes back as a resync.
         PocketRing.turn(mc.player, hotbar, count, forward);
-        for (PocketStrip look : PocketStrip.ALL) HudCycleStrip.slide(look, hotbar,
-                forward ? HudCycleStrip.Direction.FORWARD : HudCycleStrip.Direction.BACKWARD);
+        PocketStrip.slide(hotbar, forward);
     }
 }
