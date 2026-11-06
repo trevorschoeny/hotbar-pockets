@@ -7,8 +7,8 @@ import com.trevlar.menukit.api.hud.HotbarDecorations;
 import com.trevlar.menukit.api.hud.HudPanel;
 import com.trevlar.menukit.api.panel.ModeScope;
 import com.trevlar.menukit.api.panel.OutsideRegion;
-import com.trevlar.menukit.core.DrawAlpha;
-import com.trevlar.menukit.core.ItemOutline;
+import com.trevlar.menukit.api.DrawAlpha;
+import com.trevlar.menukit.api.ItemOutline;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -165,8 +165,6 @@ public final class PocketHud {
         int alpha = Math.round(255 * PocketStrip.SHADOW_OPACITY * strength);
         if (alpha > 0) {
             float offset = PocketStrip.SHADOW_OFFSET * scale;
-            // ponytail: MenuKit's internal silhouette pass, the one SlotRendering.drawItemOutline
-            // wraps; swap for a public item-shadow call once MenuKit has one.
             ItemOutline.silhouettes(alpha << 24, () -> drawScaled(g, stack, cx + offset, cy + offset, scale));
         }
         drawScaled(g, stack, cx, cy, scale);
@@ -182,8 +180,6 @@ public final class PocketHud {
                             float decorationsAlpha) {
         drawArcItem(g, stack, cx, cy, scale);
         if (stack.isEmpty() || decorationsAlpha <= 0f) return;
-        // ponytail: MenuKit's internal draw opacity, the one PanelTransform fades panels
-        // with; swap for a public call once MenuKit has one.
         float before = DrawAlpha.push(decorationsAlpha);
         g.pose().pushMatrix();
         try {

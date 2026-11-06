@@ -32,8 +32,8 @@ It has to be installed on the server as well as the client. In singleplayer, you
 ### Requirements
 
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-- [MenuKit](https://modrinth.com/mod/menukit) 7.5.0 or newer, below 8.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
-- [SlotKit](https://modrinth.com/mod/slotkit) 2.3.0 or newer, below 3.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
+- [MenuKit](https://modrinth.com/mod/menukit) 8.0.0 or newer, below 9.0.0, which draws the pockets, the plus and minus buttons, and the mini hotbar.
+- [SlotKit](https://modrinth.com/mod/slotkit) 3.0.0 or newer, below 4.0.0, which adds the pocket slots to your inventory, saves them with your player on the server, and checks that a joining player has the mod.
 
 ### Pairs well with
 
