@@ -14,9 +14,9 @@ package com.trevorschoeny.hotbarpockets;
  *
  * <h3>Reveal model</h3>
  *
- * One hotbar slot's pocket column shows at a time (the hovered one, with
- * hysteresis). A pocket (hotbar, depth) shows only if that hotbar slot is the
- * revealed one and the player's configured count for it is greater than depth.
+ * One hotbar slot's pocket column is hovered at a time (with hysteresis); others
+ * may still be shrinking away. A pocket (hotbar, depth) shows only while that
+ * hotbar slot is shown and the player's configured count for it is greater than depth.
  */
 public final class PocketHoverState {
 
@@ -28,25 +28,29 @@ public final class PocketHoverState {
     private static final int[] counts = new int[Pockets.HOTBAR_SLOTS];
 
     /**
-     * Hotbar slot whose row is shrinking back into its arc after the cursor left it, or -1.
-     * Its pockets stay laid out (and drawn) until the shrink ends; the shrinking panels take
-     * no input. Set by the client's arc drawing (PocketArcs).
+     * Hotbar slots whose rows are shrinking back into their arcs after the cursor left them.
+     * Each shrinks on its own clock, so several can at once. Their pockets stay laid out (and
+     * drawn) until the shrink ends; the shrinking panels take no input. Set by the client's
+     * arc drawing (PocketArcs).
      */
-    private static volatile int closingHotbar = -1;
+    private static final boolean[] closing = new boolean[Pockets.HOTBAR_SLOTS];
 
     /** True if pocket (hotbar, depth) should be visible now: its column is shown and its count reaches it. */
     public static boolean isRevealed(int hotbar, int depth) {
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return false;
-        return shownHotbar() == hotbar && counts[hotbar] > depth;
+        return isShown(hotbar) && counts[hotbar] > depth;
     }
 
     /** The hovered column: the one the keys and the + and - act on. */
     public static int revealedHotbar() { return revealedHotbar; }
     public static void setRevealedHotbar(int hotbar) { revealedHotbar = hotbar; }
 
-    /** The column whose row is laid out: the hovered one, else one still shrinking away. */
-    public static int shownHotbar() { return revealedHotbar >= 0 ? revealedHotbar : closingHotbar; }
-    public static void setClosingHotbar(int hotbar) { closingHotbar = hotbar; }
+    /** Whether column {@code hotbar}'s row is laid out: it's hovered, or still shrinking away. */
+    public static boolean isShown(int hotbar) {
+        if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return false;
+        return revealedHotbar == hotbar || closing[hotbar];
+    }
+    public static void setClosing(int hotbar, boolean shrinking) { closing[hotbar] = shrinking; }
 
     public static int count(int hotbar) {
         if (hotbar < 0 || hotbar >= Pockets.HOTBAR_SLOTS) return 0;

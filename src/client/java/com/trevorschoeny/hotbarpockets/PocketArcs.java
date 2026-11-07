@@ -41,7 +41,9 @@ import java.util.List;
  * growing from half to full size, into their slots in the row, and the row's panels grow
  * out of the arc and fade in with them ({@link #rowTransform}). When it closes, all of it
  * goes back into the arc; the row stays laid out until then
- * ({@link PocketHoverState#shownHotbar}). The timing is the turn's spring, quicker
+ * ({@link PocketHoverState#isShown}). Each column slides on its own clock, so moving
+ * straight from one slot to the next shrinks the old row while the new one grows, and a
+ * slide cut short turns back from where it got to. The timing is the turn's spring, quicker
  * ({@link PocketStrip#hoverProgress}).
  * Meanwhile the row's own items are hidden
  * ({@link #hideWhileSliding}), or each would show twice: flying, and in its slot.
@@ -65,12 +67,14 @@ public final class PocketArcs {
     /** How far above the hotbar item's center the arc's middle sits: the row grows from there. */
     private static final float ARC_RISE = 9f;
 
-    // The hover slide, render thread only. lastRevealed is the column shown last frame;
-    // slideColumn the one sliding (or -1), opening its direction, slideStart its clock.
+    // The hover slides, one per column, render thread only. lastRevealed is the column
+    // hovered last frame. Per column: running while a slide is under way, opening its
+    // direction, from where it started (0 at the arc, 1 in the row), start its clock.
     private static int lastRevealed = -1;
-    private static int slideColumn = -1;
-    private static boolean opening;
-    private static long slideStart;
+    private static final boolean[] running = new boolean[Pockets.HOTBAR_SLOTS];
+    private static final boolean[] opening = new boolean[Pockets.HOTBAR_SLOTS];
+    private static final float[] from = new float[Pockets.HOTBAR_SLOTS];
+    private static final long[] start = new long[Pockets.HOTBAR_SLOTS];
 
     /** Registers the resting arcs, the hover slide's panel and the row-hiding look. Call once at client init. */
     public static void register() {
@@ -89,18 +93,20 @@ public final class PocketArcs {
         SlotDecorations.under(HotbarPockets.MOD_ID + ":arcs", PocketArcs::drawRestingArc);
     }
 
-    /** Whether a slide is running now. */
-    private static boolean sliding() {
-        return slideColumn >= 0 && !PocketStrip.done(slideStart, PocketStrip.HOVER_MILLIS);
+    /** Whether column {@code n}'s slide is running now. */
+    private static boolean sliding(int n) {
+        return running[n] && !PocketStrip.done(start[n], PocketStrip.HOVER_MILLIS);
     }
 
     // A row slot's item hides while its column's row opens or closes; any other slot is left be.
     private static ItemAnimation.@Nullable Frame hideWhileSliding(AbstractContainerScreen<?> screen, Slot slot, ItemStack stack) {
-        if (!sliding()) return null;
         CreatedSlot created = CreatedSlot.of(slot);
         if (created == null) return null;
-        for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
-            if (Pockets.isPocket(created, slideColumn, d)) return ItemAnimation.HIDDEN.at(1f);   // the item, its count and its bar
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
+            if (!sliding(n)) continue;
+            for (int d = 0; d < Pockets.MAX_PER_SLOT; d++) {
+                if (Pockets.isPocket(created, n, d)) return ItemAnimation.HIDDEN.at(1f);   // the item, its count and its bar
+            }
         }
         return null;
     }
@@ -114,7 +120,7 @@ public final class PocketArcs {
         int n = slot.getContainerSlot();
         // Null where this screen has no pockets.
         if (PocketGeometry.shownAnchor(n) == null) return;
-        if (n == PocketHoverState.revealedHotbar() || (n == slideColumn && sliding())) return;
+        if (n == PocketHoverState.revealedHotbar() || sliding(n)) return;
         PocketHud.drawArc(g, n, x + 8, y + 8);
     }
 
@@ -130,44 +136,61 @@ public final class PocketArcs {
 
         @Override
         public void render(RenderContext ctx) {
-            if (!PocketsSettings.enabled() || !PocketsSettings.previews()) return;
-            trackHover();
-            // A closed row's shrink is over: it stops being laid out.
-            if (!opening && slideColumn >= 0 && !sliding()) {
-                PocketHoverState.setClosingHotbar(-1);
-                slideColumn = -1;
+            if (!PocketsSettings.enabled() || !PocketsSettings.previews()) {
+                // No slides without previews; a row cut off mid-shrink isn't left laid out.
+                for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) finish(n);
+                lastRevealed = PocketHoverState.revealedHotbar();
+                return;
             }
-            if (!sliding()) return;
-            // Null where this screen has no pockets.
-            SlotScreenRect slot = PocketGeometry.shownAnchor(slideColumn);
-            if (slot != null) drawSlide(ctx.graphics(), slideColumn, slot);
+            trackHover();
+            for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) {
+                // A slide that's over stops; a closed row's shrink being over, it stops being laid out.
+                if (running[n] && !sliding(n)) finish(n);
+                if (!sliding(n)) continue;
+                // Null where this screen has no pockets.
+                SlotScreenRect slot = PocketGeometry.shownAnchor(n);
+                if (slot != null) drawSlide(ctx.graphics(), n, slot);
+            }
         }
     }
 
-    // Starts a slide when the shown column changes: the new column's arc slides into its
-    // row; with no column shown now, the one that closed slides back to its arc. Moving
-    // straight from one column to another opens the new one; the old arc just reappears.
+    // Starts slides when the hovered column changes: the one left shrinks back to its arc,
+    // the one entered grows into its row, both at once.
     private static void trackHover() {
         int revealed = PocketHoverState.revealedHotbar();
         if (revealed == lastRevealed) return;
-        if (revealed >= 0) { slideColumn = revealed; opening = true; PocketHoverState.setClosingHotbar(-1); }
-        else { slideColumn = lastRevealed; opening = false; PocketHoverState.setClosingHotbar(lastRevealed); }
-        slideStart = Util.getMillis();
+        if (lastRevealed >= 0) begin(lastRevealed, false);
+        if (revealed >= 0) begin(revealed, true);
         lastRevealed = revealed;
     }
 
-    /** Restarts a running hover slide's clock now. For the preview shots, which start it at chosen times. */
+    // Starts column n's slide towards its row (opening) or its arc, from wherever it is now:
+    // part way if a slide the other way was still running, else from the far end.
+    private static void begin(int n, boolean open) {
+        from[n] = sliding(n) ? rowness(n) : open ? 0f : 1f;
+        opening[n] = open;
+        start[n] = Util.getMillis();
+        running[n] = true;
+        PocketHoverState.setClosing(n, !open);
+    }
+
+    private static void finish(int n) {
+        running[n] = false;
+        PocketHoverState.setClosing(n, false);
+    }
+
+    /** Restarts every running hover slide's clock now. For the preview shots, which start them at chosen times. */
     static void restampSlide() {
-        if (slideColumn >= 0) slideStart = Util.getMillis();
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) if (running[n]) start[n] = Util.getMillis();
     }
 
     /**
-     * The slide's position: 0 at the arc, 1 in the row, a little past either end at the
-     * spring's bounce.
+     * Column {@code n}'s slide position: 0 at the arc, 1 in the row, a little past either
+     * end at the spring's bounce.
      */
-    private static float rowness() {
-        float p = PocketStrip.hoverProgress(slideStart);
-        return opening ? p : 1f - p;
+    private static float rowness(int n) {
+        float to = opening[n] ? 1f : 0f;
+        return from[n] + (to - from[n]) * PocketStrip.hoverProgress(start[n]);
     }
 
     /**
@@ -176,11 +199,11 @@ public final class PocketArcs {
      * size and faded in with it; otherwise as laid out. MenuKit keeps a panel that isn't at
      * full size from taking input, so a click never lands on a row still growing.
      */
-    static PanelTransform rowTransform() {
-        if (!sliding()) return PanelTransform.IDENTITY;
-        SlotScreenRect slot = PocketGeometry.shownAnchor(slideColumn);
+    static PanelTransform rowTransform(int n) {
+        if (!sliding(n)) return PanelTransform.IDENTITY;
+        SlotScreenRect slot = PocketGeometry.shownAnchor(n);
         if (slot == null) return PanelTransform.IDENTITY;
-        float k = rowness();
+        float k = rowness(n);
         float scale = Math.max(0.05f, ROW_START_SCALE + (1f - ROW_START_SCALE) * k);
         return new PanelTransform(scale, slot.x() + 8, slot.y() + 8 - ARC_RISE, k);
     }
@@ -190,11 +213,11 @@ public final class PocketArcs {
      * under the hotbar slot (scaled about the middle of the slot's bottom edge) and fades
      * in, on the same spring, and goes back the same way.
      */
-    static PanelTransform buttonsTransform() {
-        if (!sliding()) return PanelTransform.IDENTITY;
-        SlotScreenRect slot = PocketGeometry.shownAnchor(slideColumn);
+    static PanelTransform buttonsTransform(int n) {
+        if (!sliding(n)) return PanelTransform.IDENTITY;
+        SlotScreenRect slot = PocketGeometry.shownAnchor(n);
         if (slot == null) return PanelTransform.IDENTITY;
-        float k = rowness();
+        float k = rowness(n);
         float scale = Math.max(0.05f, ROW_START_SCALE + (1f - ROW_START_SCALE) * k);
         return new PanelTransform(scale, slot.x() + 8, PocketGeometry.buttonsTop(slot), k);
     }
@@ -209,7 +232,7 @@ public final class PocketArcs {
         Minecraft mc = Minecraft.getInstance();
         int count = PocketState.count(n);
         if (mc.player == null || count < 1) return;
-        float k = rowness();
+        float k = rowness(n);
         List<ItemAnimation.Pose> arc = PocketStrip.points(count);
         Storage pockets = Pockets.POCKETS.bind(mc.player);
         float cx = slot.x() + 8, cy = slot.y() + 8;   // the hotbar item's center

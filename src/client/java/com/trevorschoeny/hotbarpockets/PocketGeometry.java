@@ -30,11 +30,11 @@ public final class PocketGeometry {
 
     /**
      * Where pocket (hotbar, depth)'s slot frame sits this frame: in the floating row over
-     * the shown column. Null (skip the frame) unless that column is shown, the pocket is
+     * its column. Null (skip the frame) unless that column is shown, the pocket is
      * within its count, and the open screen has the pockets and the hotbar slot.
      */
     static @Nullable ScreenOrigin pocketOrigin(int hotbar, int depth) {
-        if (PocketHoverState.shownHotbar() != hotbar) return null;
+        if (!PocketHoverState.isShown(hotbar)) return null;
         int count = PocketHoverState.count(hotbar);
         if (depth >= count) return null;
         SlotScreenRect anchor = shownAnchor(hotbar);

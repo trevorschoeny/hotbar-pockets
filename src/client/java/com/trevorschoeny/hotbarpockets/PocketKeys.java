@@ -8,7 +8,8 @@ import net.minecraft.resources.Identifier;
 
 /**
  * The two cycle keys, as vanilla {@link KeyMapping}s so they show in Controls and can
- * be rebound. Right and Left arrow by default, clear of Inventory Plus's Column Cycler
+ * be rebound. Right and Left arrow by default (Forward, Right, turns the ring clockwise;
+ * see PocketInput), clear of Inventory Plus's Column Cycler
  * keys ({@code ] [}). Pockets show on hover and are resized with the on-screen + and -,
  * so there are no other keys.
  */

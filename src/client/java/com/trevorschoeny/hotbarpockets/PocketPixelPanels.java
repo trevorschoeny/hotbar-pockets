@@ -21,7 +21,7 @@ import java.util.function.BooleanSupplier;
 
 /**
  * The shown pockets and their chrome, on MenuKit pixel panels. The pocket slots are
- * SlotKit groups ({@link Pockets}); these panels follow the shown column:
+ * SlotKit groups ({@link Pockets}); these panels show while their column does:
  * <ul>
  *   <li><b>The pockets</b>: one flush single-slot panel per (hotbar, depth), at its place
  *       in the floating row ({@link PocketGeometry#pocketOrigin}), or skipped when that
@@ -72,46 +72,51 @@ public final class PocketPixelPanels {
                         .build()
                         .visibleWhen(PocketsSettings::enabled)
                         // Grows out of the arc and fades in as the row opens (PocketArcs).
-                        .transform(PocketArcs::rowTransform);
+                        .transform(() -> PocketArcs.rowTransform(hotbar));
                 // Every container screen: pockets are ever-present. Where the menu has no
                 // pockets (a creative item tab) the origin is null and nothing draws.
                 new ScreenPanelAdapter(pocket, 0).onAny();
             }
         }
 
-        Panel backing = Panel.builder(HotbarPockets.MOD_ID + ":pocket_backing")
-                .elements(List.of(new RowSpacer()))
+        // A backing box and a plus and minus strip per column, so a row shrinking away
+        // keeps its chrome while the next column's grows (PocketArcs).
+        for (int n = 0; n < Pockets.HOTBAR_SLOTS; n++) registerChrome(n);
+    }
+
+    private static void registerChrome(int hotbar) {
+        Panel backing = Panel.builder(HotbarPockets.MOD_ID + ":pocket_backing_" + hotbar)
+                .elements(List.of(new RowSpacer(hotbar)))
                 .visible(true)
                 .style(PanelStyle.RAISED)
-                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::backingOrigin)
+                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(() -> backingOrigin(hotbar))
                         .priority(POCKET_PRIORITY - 1)))
                 .build()
-                .transform(PocketArcs::rowTransform);
+                .transform(() -> PocketArcs.rowTransform(hotbar));
         new ScreenPanelAdapter(backing, PocketGeometry.ROW_PAD).onAny();
 
-        Panel buttons = Panel.builder(HotbarPockets.MOD_ID + ":pocket_buttons")
+        Panel buttons = Panel.builder(HotbarPockets.MOD_ID + ":pocket_buttons_" + hotbar)
                 .elements(List.of(
-                        new ResizeButton(false, 0),
-                        new ResizeButton(true, PocketGeometry.BUTTON_SIZE + 1)))
+                        new ResizeButton(hotbar, false, 0),
+                        new ResizeButton(hotbar, true, PocketGeometry.BUTTON_SIZE + 1)))
                 .visible(true)
                 .style(PanelStyle.NONE)
                 // Above every ordinary panel (Inventory Plus's buttons included), so
                 // plus and minus are never hidden and take their clicks.
                 .popover()
-                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(PocketPixelPanels::buttonsOrigin)))
+                .in(ModeScope.BOTH, Placement.screen(PanelPosition.pixel(() -> buttonsOrigin(hotbar))))
                 .build()
                 // Only a hit inside a button counts; the 1px gap between them eats nothing.
                 .opaque(false)
                 // Grows out from under the slot and fades in as the row grows out of the arc.
-                .transform(PocketArcs::buttonsTransform);
+                .transform(() -> PocketArcs.buttonsTransform(hotbar));
         new ScreenPanelAdapter(buttons, 0).onAny();
     }
 
     // The backing box's outer top-left: the row's first frame less the pad. Null unless
-    // a column with at least one pocket is shown.
-    private static ScreenOrigin backingOrigin() {
-        int rev = PocketHoverState.shownHotbar();
-        if (rev < 0) return null;
+    // the column is shown with at least one pocket.
+    private static ScreenOrigin backingOrigin(int rev) {
+        if (!PocketHoverState.isShown(rev)) return null;
         int count = PocketHoverState.count(rev);
         if (count <= 0) return null;
         SlotScreenRect anchor = PocketGeometry.shownAnchor(rev);
@@ -121,24 +126,20 @@ public final class PocketPixelPanels {
                 PocketGeometry.rowY(anchor) - PocketGeometry.ROW_PAD);
     }
 
-    // The plus and minus strip's top-left: just below the shown column's hotbar slot
-    // (or one still shrinking away). Null when no column is shown.
-    private static ScreenOrigin buttonsOrigin() {
-        int rev = PocketHoverState.shownHotbar();
-        if (rev < 0) return null;
+    // The plus and minus strip's top-left: just below the column's hotbar slot, while it's
+    // shown (hovered or still shrinking away). Null otherwise.
+    private static ScreenOrigin buttonsOrigin(int rev) {
+        if (!PocketHoverState.isShown(rev)) return null;
         SlotScreenRect anchor = PocketGeometry.shownAnchor(rev);
         if (anchor == null) return null;
         return new ScreenOrigin(PocketGeometry.buttonsX(anchor), PocketGeometry.buttonsTop(anchor) + 2);
     }
 
-    /** Takes the shown row's size, so the raised box fits 1, 2 or 3 pockets. Draws nothing. */
-    private static final class RowSpacer implements PanelElement {
+    /** Takes its column's row size, so the raised box fits 1, 2 or 3 pockets. Draws nothing. */
+    private record RowSpacer(int hotbar) implements PanelElement {
         @Override public int getChildX() { return 0; }
         @Override public int getChildY() { return 0; }
-        @Override public int getWidth() {
-            int rev = PocketHoverState.shownHotbar();
-            return rev < 0 ? 0 : PocketHoverState.count(rev) * Pockets.SLOT;
-        }
+        @Override public int getWidth() { return PocketHoverState.count(hotbar) * Pockets.SLOT; }
         @Override public int getHeight() { return Pockets.SLOT; }
         @Override public void render(RenderContext ctx) {}
     }
@@ -159,10 +160,12 @@ public final class PocketPixelPanels {
      */
     private static final class ResizeButton implements PanelElement {
 
+        private final int hotbar;
         private final boolean plus;
         private final int childX;
 
-        ResizeButton(boolean plus, int childX) {
+        ResizeButton(int hotbar, boolean plus, int childX) {
+            this.hotbar = hotbar;
             this.plus = plus;
             this.childX = childX;
         }
@@ -172,11 +175,9 @@ public final class PocketPixelPanels {
         @Override public int getWidth()  { return PocketGeometry.BUTTON_SIZE; }
         @Override public int getHeight() { return PocketGeometry.BUTTON_SIZE; }
 
-        /** Enabled while the shown column can still grow or shrink. */
+        /** Enabled while the column can still grow or shrink. */
         private boolean enabled() {
-            int rev = PocketHoverState.shownHotbar();
-            if (rev < 0) return false;
-            int c = PocketHoverState.count(rev);
+            int c = PocketHoverState.count(hotbar);
             return plus ? c < Pockets.MAX_PER_SLOT : c > 0;
         }
 
@@ -200,10 +201,10 @@ public final class PocketPixelPanels {
         @Override
         public boolean mouseClicked(InputContext in, int button) {
             if (Click.of(button).ctrl() && openSettings.getAsBoolean()) return true;
-            int rev = PocketHoverState.revealedHotbar();
-            if (rev < 0) return false;
-            if (plus) PocketState.grow(rev);
-            else PocketState.shrink(rev);
+            // Only the hovered column's strip acts; one shrinking away is just looks.
+            if (PocketHoverState.revealedHotbar() != hotbar) return false;
+            if (plus) PocketState.grow(hotbar);
+            else PocketState.shrink(hotbar);
             return true; // consumed either way (grayed at the limit, it does nothing)
         }
     }

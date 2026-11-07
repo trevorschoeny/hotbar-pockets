@@ -47,9 +47,9 @@ public final class PocketInput {
             ScreenKeyboardEvents.afterKeyPress(screen).register((innerScreen, event) -> {
                 if (!PocketsSettings.enabled()) return;
                 if (PocketKeys.CYCLE_FORWARD.matches(event)) {
-                    cycle(PocketHoverState.revealedHotbar(), true);
+                    cycleKey(PocketHoverState.revealedHotbar(), true);
                 } else if (PocketKeys.CYCLE_BACKWARD.matches(event)) {
-                    cycle(PocketHoverState.revealedHotbar(), false);
+                    cycleKey(PocketHoverState.revealedHotbar(), false);
                 }
             });
         });
@@ -63,8 +63,15 @@ public final class PocketInput {
         while (PocketKeys.CYCLE_FORWARD.consumeClick()) fwd = true;
         while (PocketKeys.CYCLE_BACKWARD.consumeClick()) back = true;
         if (!inWorld) return;
-        if (fwd) cycle(selected, true);
-        if (back) cycle(selected, false);
+        if (fwd) cycleKey(selected, true);
+        if (back) cycleKey(selected, false);
+    }
+
+    // The Forward key turns the ring clockwise as drawn (the hand's item goes to the arc's
+    // left end, the right end's comes down into the hand), which is the ring's backward
+    // step: PocketRing's forward brings pocket 0, the arc's left end, into the hand.
+    private static void cycleKey(int hotbar, boolean forwardKey) {
+        cycle(hotbar, !forwardKey);
     }
 
     /** Sends a rotation request for {@code hotbar} and starts the HUD animation. Package-private for the preview shots. */
