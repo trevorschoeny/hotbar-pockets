@@ -213,23 +213,6 @@ public final class PocketHud {
         return PocketStrip.ring(mc.player.getInventory().getSelectedSlot());
     }
 
-    /**
-     * A row, left to right: previous, held, next, the one after... For two: held, other. The
-     * held one is at index {@link #rowHeld}.
-     */
-    private static List<ItemStack> rowOrder(List<ItemStack> ring) {
-        int n = ring.size();
-        if (n == 2) return ring;
-        List<ItemStack> out = new ArrayList<>(n);
-        out.add(ring.getLast());
-        out.addAll(ring.subList(0, n - 1));
-        return out;
-    }
-
-    private static int rowHeld(int size) {
-        return size == 2 ? 0 : 1;
-    }
-
     /** The mini hotbar: the bar, its stacks and the selection frame, at the ring's live width. */
     private static final class MiniHotbar implements PanelElement {
         @Override public int getChildX() { return 0; }
@@ -249,8 +232,9 @@ public final class PocketHud {
             if (ring == null || mc.player == null) return;
             GuiGraphicsExtractor g = ctx.graphics();
             int x = ctx.originX(), y = ctx.originY();
-            List<ItemStack> items = rowOrder(ring);
-            int n = items.size(), hi = rowHeld(n);
+            // Left to right as in the inventory: the held stack, then pocket 0, 1, 2.
+            List<ItemStack> items = ring;
+            int n = items.size();
             int width = n * SLOT_PX + 2 * BORDER_PX;
             boolean turning = PocketStrip.turning(mc.player.getInventory().getSelectedSlot());
             boolean forward = PocketStrip.turnForward();
@@ -274,7 +258,7 @@ public final class PocketHud {
                 g.disableScissor();
             }
             // The selection frame starts two px left of its cell, as vanilla's does.
-            int cellX = cellsLeft + hi * SLOT_PX;
+            int cellX = cellsLeft;
             g.blitSprite(RenderPipelines.GUI_TEXTURED, SELECTION_SPRITE, SELECTION_W, SELECTION_H, 0, 0,
                     cellX - BORDER_PX - 1, y - 1, SELECTION_W, SELECTION_H);
         }
