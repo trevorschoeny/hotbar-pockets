@@ -1,9 +1,11 @@
 package com.trevorschoeny.hotbarpockets;
 
+import com.trevlar.menukit.api.panel.SlotDecorations;
 import com.trevlar.slotkit.api.group.SlotScreenRect;
 import com.trevlar.slotkit.api.slot.CreatedSlot;
 
 import net.fabricmc.fabric.api.client.creativetab.v1.FabricCreativeModeInventoryScreen;
+import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.minecraft.client.Minecraft;
@@ -31,7 +33,7 @@ import java.util.List;
  *
  * <p>In this package so it can ask {@link PocketGeometry#pocketOrigin} directly.
  */
-public class ModeChecks implements FabricClientGameTest {
+public class ModeChecks implements FabricClientGameTest, ClientModInitializer {
 
     /** The hotbar slot the scene has the player hover (slot 2 in the labels, index 1). */
     private static final int HOTBAR = 1;
@@ -54,6 +56,7 @@ public class ModeChecks implements FabricClientGameTest {
                 ctx.waitTicks(3);
                 expectShown(true);
                 expectContents();
+                expectArcDrawsPocketDecorations();
                 expectTurnInHandAtOnce();
             });
             run("hotbarpockets:survival", "survival", this::expectOverRecipeBook);
@@ -269,6 +272,35 @@ public class ModeChecks implements FabricClientGameTest {
                 .bind(server.getPlayerList().getPlayers().getFirst())
                 .setStack(Pockets.flatIndex(HOTBAR, 0), stack));
         ctx.waitTicks(5);
+    }
+
+    // Set by the probe decoration when the arc draws it on a hidden pocket (HOTBAR, 0): a hidden
+    // slot isn't drawn by the screen, so only the arc can have asked for it.
+    private static volatile boolean probeInArc = false;
+
+    /** Declares the probe; MenuKit takes decorations only before the client starts. */
+    @Override
+    public void onInitializeClient() {
+        SlotDecorations.under("hotbarpockets_check:probe", (g, screen, slot, stack, x, y) -> {
+            CreatedSlot c = CreatedSlot.of(slot);
+            if (c != null && Pockets.isPocket(c, HOTBAR, 0) && !slot.isActive()) probeInArc = true;
+        });
+    }
+
+    /**
+     * With the column's row closed, the resting arc draws the decorations declared on the
+     * pockets' real slots: a probe under-decoration runs for pocket (HOTBAR, 0) while that
+     * slot is hidden. Fills pocket 0 for it (the arc skips empty pockets), then empties it.
+     */
+    private void expectArcDrawsPocketDecorations() {
+        setPocket(new ItemStack(Items.DIAMOND, 5));
+        // Off the hotbar, so the row closes and the arc rests; past the hover slide.
+        ctx.getInput().setCursorPos(0, 0);
+        ctx.waitTicks(10);
+        probeInArc = false;
+        ctx.waitTicks(3);
+        setPocket(ItemStack.EMPTY);
+        if (!probeInArc) throw new AssertionError("the arc didn't draw pocket 0's declared decorations");
     }
 
     /**

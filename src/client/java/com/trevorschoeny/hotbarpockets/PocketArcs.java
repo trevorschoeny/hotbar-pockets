@@ -121,7 +121,7 @@ public final class PocketArcs {
         // Null where this screen has no pockets.
         if (PocketGeometry.shownAnchor(n) == null) return;
         if (n == PocketHoverState.revealedHotbar() || sliding(n)) return;
-        PocketHud.drawArc(g, n, x + 8, y + 8);
+        PocketHud.drawArc(g, n, x + 8, y + 8, screen);
     }
 
     /**
@@ -149,7 +149,9 @@ public final class PocketArcs {
                 if (!sliding(n)) continue;
                 // Null where this screen has no pockets.
                 SlotScreenRect slot = PocketGeometry.shownAnchor(n);
-                if (slot != null) drawSlide(ctx.graphics(), n, slot);
+                if (slot != null && Minecraft.getInstance().gui.screen() instanceof AbstractContainerScreen<?> screen) {
+                    drawSlide(ctx.graphics(), screen, n, slot);
+                }
             }
         }
     }
@@ -226,9 +228,9 @@ public final class PocketArcs {
      * Column {@code n}'s stacks part way between its arc and its row: each in a straight line
      * from its arc point to its row slot's center, scaling from the arc's size to full size.
      * {@code k} is 0 at the arc and 1 in the row (a little past either end at the spring's
-     * overshoot).
+     * overshoot). Each carries its pocket slot's declared decorations, as in the arc.
      */
-    private static void drawSlide(GuiGraphicsExtractor g, int n, SlotScreenRect slot) {
+    private static void drawSlide(GuiGraphicsExtractor g, AbstractContainerScreen<?> screen, int n, SlotScreenRect slot) {
         Minecraft mc = Minecraft.getInstance();
         int count = PocketState.count(n);
         if (mc.player == null || count < 1) return;
@@ -247,7 +249,8 @@ public final class PocketArcs {
                     PocketStrip.ICON_SCALE + (1f - PocketStrip.ICON_SCALE) * k,
                     // The count and bar grow and fade in with the item, so the slot's own
                     // take over seamlessly when the slide ends.
-                    Math.clamp(k, 0f, 1f));
+                    Math.clamp(k, 0f, 1f),
+                    screen, PocketGeometry.pocketSlot(screen, n, d));
         }
     }
 }

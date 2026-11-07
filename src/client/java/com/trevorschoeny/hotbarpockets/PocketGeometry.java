@@ -94,4 +94,13 @@ public final class PocketGeometry {
         }
         return false;
     }
+
+    /** Pocket (hotbar, depth)'s slot on {@code screen}'s menu, or null when the menu doesn't hold it. */
+    public static @Nullable Slot pocketSlot(AbstractContainerScreen<?> screen, int hotbar, int depth) {
+        for (Slot s : screen.getMenu().slots) {
+            CreatedSlot created = CreatedSlot.of(s);
+            if (created != null && Pockets.isPocket(created, hotbar, depth)) return s;
+        }
+        return null;
+    }
 }

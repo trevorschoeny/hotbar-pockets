@@ -9,11 +9,14 @@ import com.trevlar.menukit.api.hud.HotbarDecorations;
 import com.trevlar.menukit.api.hud.HudPanel;
 import com.trevlar.menukit.api.panel.ModeScope;
 import com.trevlar.menukit.api.panel.OutsideRegion;
+import com.trevlar.menukit.api.panel.SlotDecorations;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 import org.jspecify.annotations.Nullable;
@@ -88,7 +91,7 @@ public final class PocketHud {
     private static void drawHudArc(GuiGraphicsExtractor g, int hotbar, int cx, int cy) {
         List<ItemStack> ring = arcRing(hotbar);
         if (ring == null) return;
-        drawArc(g, hotbar, cx, cy);
+        drawArc(g, hotbar, cx, cy, null);
         // At rest but owning the slot: a predicted turn the server hasn't confirmed. The
         // hotbar drew the slot empty, so the predicted held stack goes there, as vanilla would.
         Minecraft mc = Minecraft.getInstance();
@@ -132,8 +135,12 @@ public final class PocketHud {
      * the leaving stack (the one that was held, headed for a point) draws over the pockets it
      * crosses, since it was on top a moment ago, and the entering one (headed for the hand)
      * last, on top of that. Stacks here draw without their count: at this size it can't be read.
+     *
+     * <p>On a container screen ({@code screen} not null) each pocket's icon also draws the
+     * {@link SlotDecorations} declared on its real slot, scaled with it, so a mark another
+     * mod puts on a pocket (a locked slot's gray, a reserve icon) shows in the arc too.
      */
-    static void drawArc(GuiGraphicsExtractor g, int hotbar, float cx, float cy) {
+    static void drawArc(GuiGraphicsExtractor g, int hotbar, float cx, float cy, @Nullable AbstractContainerScreen<?> screen) {
         List<ItemStack> ring = arcRing(hotbar);
         if (ring == null) return;
         int n = ring.size();
@@ -142,14 +149,17 @@ public final class PocketHud {
         // The stack animating away from the held pose: the one step back in the turn's direction.
         int leaving = !turning ? -1 : Math.floorMod(PocketStrip.turnForward() ? -1 : 1, n);
         for (int j = n - 1; j >= 1; j--) {
-            if (j != leaving) drawPosed(g, ring.get(j), poses.get(j), cx, cy);
+            if (j != leaving) drawPosed(g, ring, j, poses.get(j), cx, cy, screen, hotbar);
         }
-        if (leaving >= 0) drawPosed(g, ring.get(leaving), poses.get(leaving), cx, cy);
-        if (turning) drawPosed(g, ring.getFirst(), poses.getFirst(), cx, cy);
+        if (leaving >= 0) drawPosed(g, ring, leaving, poses.get(leaving), cx, cy, screen, hotbar);
+        if (turning) drawPosed(g, ring, 0, poses.getFirst(), cx, cy, screen, hotbar);
     }
 
-    private static void drawPosed(GuiGraphicsExtractor g, ItemStack stack, Pose pose, float cx, float cy) {
-        drawArcItem(g, stack, cx + pose.offsetX(), cy + pose.offsetY(), pose.scale());
+    // Ring member j, pocket j - 1 (the held one, j = 0, is the hotbar slot's, which draws its own).
+    private static void drawPosed(GuiGraphicsExtractor g, List<ItemStack> ring, int j, Pose pose, float cx, float cy,
+                                  @Nullable AbstractContainerScreen<?> screen, int hotbar) {
+        Slot slot = screen == null || j == 0 ? null : PocketGeometry.pocketSlot(screen, hotbar, j - 1);
+        drawArcItem(g, ring.get(j), cx + pose.offsetX(), cy + pose.offsetY(), pose.scale(), 0f, screen, slot);
     }
 
     /**
@@ -157,8 +167,15 @@ public final class PocketHud {
      * its count, over its shadow: its own shape, dark and faint, offset down and right like a
      * text shadow, full at the arc's icon size and gone at the slot's, so a stack flown into a
      * slot lands with none. An empty stack draws nothing.
+     *
+     * <p>Its count, durability bar and cooldown draw at {@code decorationsAlpha} (0 draws none, 1
+     * as a slot draws them; for a copy flown from the arc into a slot, so its count fades in
+     * on the way), and, when {@code slot} isn't null, the {@link SlotDecorations} declared on
+     * it: under ones beneath the item, over ones on top, scaled and centered with it, as the
+     * slot itself draws them.
      */
-    static void drawArcItem(GuiGraphicsExtractor g, ItemStack stack, float cx, float cy, float scale) {
+    static void drawArcItem(GuiGraphicsExtractor g, ItemStack stack, float cx, float cy, float scale,
+                            float decorationsAlpha, @Nullable AbstractContainerScreen<?> screen, @Nullable Slot slot) {
         if (stack.isEmpty()) return;
         float strength = scale <= PocketStrip.ICON_SCALE ? 1f
                 : Math.clamp((1f - scale) / (1f - PocketStrip.ICON_SCALE), 0f, 1f);
@@ -167,28 +184,24 @@ public final class PocketHud {
             float offset = PocketStrip.SHADOW_OFFSET * scale;
             ItemOutline.silhouettes(alpha << 24, () -> drawScaled(g, stack, cx + offset, cy + offset, scale));
         }
-        drawScaled(g, stack, cx, cy, scale);
-    }
-
-    /**
-     * {@link #drawArcItem(GuiGraphicsExtractor, ItemStack, float, float, float)} plus the
-     * stack's count, durability bar and cooldown, scaled and centered with it, at
-     * {@code decorationsAlpha}: 0 draws none, 1 as a slot draws them. For a copy flown from
-     * the arc into a slot, so its count fades in on the way.
-     */
-    static void drawArcItem(GuiGraphicsExtractor g, ItemStack stack, float cx, float cy, float scale,
-                            float decorationsAlpha) {
-        drawArcItem(g, stack, cx, cy, scale);
-        if (stack.isEmpty() || decorationsAlpha <= 0f) return;
-        float before = DrawAlpha.push(decorationsAlpha);
         g.pose().pushMatrix();
         try {
             g.pose().translate(cx, cy);
             g.pose().scale(scale, scale);
-            g.itemDecorations(Minecraft.getInstance().font, stack, -8, -8);
+            // The item box at (-8, -8) in the scaled pose: where the slot's own draw puts it.
+            if (slot != null && screen != null) SlotDecorations.draw(true, g, screen, slot, stack, -8, -8);
+            g.item(stack, -8, -8);
+            if (decorationsAlpha > 0f) {
+                float before = DrawAlpha.push(decorationsAlpha);
+                try {
+                    g.itemDecorations(Minecraft.getInstance().font, stack, -8, -8);
+                } finally {
+                    DrawAlpha.pop(before);
+                }
+            }
+            if (slot != null && screen != null) SlotDecorations.draw(false, g, screen, slot, stack, -8, -8);
         } finally {
             g.pose().popMatrix();
-            DrawAlpha.pop(before);
         }
     }
 
