@@ -135,8 +135,8 @@ public final class PocketHud {
      * the leaving stack (the one that was held, headed for a point) draws over the pockets it
      * crosses, since it was on top a moment ago, and the entering one (headed for the hand)
      * last, on top of that. Stacks here draw without their count: at this size it can't be
-     * read — except the entering stack, whose count fades and grows in with it on the turn's
-     * own progress, landing at full size and opaque exactly as it reaches the hand.
+     * read. The entering stack is the exception: its count fades and grows in with it on the
+     * turn's own progress, landing at full size and opaque exactly as it reaches the hand.
      *
      * <p>On a container screen ({@code screen} not null) each pocket's icon also draws the
      * {@link SlotDecorations} declared on its real slot, scaled with it, so a mark another
