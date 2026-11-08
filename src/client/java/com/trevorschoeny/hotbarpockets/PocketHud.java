@@ -134,7 +134,9 @@ public final class PocketHud {
      * the held stack to the slot. During a turn every stack moves, the held ones included:
      * the leaving stack (the one that was held, headed for a point) draws over the pockets it
      * crosses, since it was on top a moment ago, and the entering one (headed for the hand)
-     * last, on top of that. Stacks here draw without their count: at this size it can't be read.
+     * last, on top of that. Stacks here draw without their count: at this size it can't be
+     * read — except the entering stack, whose count fades and grows in with it on the turn's
+     * own progress, landing at full size and opaque exactly as it reaches the hand.
      *
      * <p>On a container screen ({@code screen} not null) each pocket's icon also draws the
      * {@link SlotDecorations} declared on its real slot, scaled with it, so a mark another
@@ -149,17 +151,19 @@ public final class PocketHud {
         // The stack animating away from the held pose: the one step back in the turn's direction.
         int leaving = !turning ? -1 : Math.floorMod(PocketStrip.turnForward() ? -1 : 1, n);
         for (int j = n - 1; j >= 1; j--) {
-            if (j != leaving) drawPosed(g, ring, j, poses.get(j), cx, cy, screen, hotbar);
+            if (j != leaving) drawPosed(g, ring, j, poses.get(j), cx, cy, screen, hotbar, 0f);
         }
-        if (leaving >= 0) drawPosed(g, ring, leaving, poses.get(leaving), cx, cy, screen, hotbar);
-        if (turning) drawPosed(g, ring, 0, poses.getFirst(), cx, cy, screen, hotbar);
+        if (leaving >= 0) drawPosed(g, ring, leaving, poses.get(leaving), cx, cy, screen, hotbar, 0f);
+        // The entering stack's count fades and grows in with it, on the turn's own progress,
+        // so it lands exactly at full size and opaque as the stack reaches the hand.
+        if (turning) drawPosed(g, ring, 0, poses.getFirst(), cx, cy, screen, hotbar, PocketStrip.turnProgress());
     }
 
     // Ring member j, pocket j - 1 (the held one, j = 0, is the hotbar slot's, which draws its own).
     private static void drawPosed(GuiGraphicsExtractor g, List<ItemStack> ring, int j, Pose pose, float cx, float cy,
-                                  @Nullable AbstractContainerScreen<?> screen, int hotbar) {
+                                  @Nullable AbstractContainerScreen<?> screen, int hotbar, float decorationsAlpha) {
         Slot slot = screen == null || j == 0 ? null : PocketGeometry.pocketSlot(screen, hotbar, j - 1);
-        drawArcItem(g, ring.get(j), cx + pose.offsetX(), cy + pose.offsetY(), pose.scale(), 0f, screen, slot);
+        drawArcItem(g, ring.get(j), cx + pose.offsetX(), cy + pose.offsetY(), pose.scale(), decorationsAlpha, screen, slot);
     }
 
     /**
